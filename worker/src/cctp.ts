@@ -26,7 +26,7 @@ export const NATIVE_TOKENS: NativeTokenConfig[] = [
       // === CCTP V2 EVM Chains (mainnet) ===
       { chain: "Ethereum", rpc: "https://ethereum-rpc.publicnode.com", token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 6 },
       { chain: "Arbitrum", rpc: "https://arb1.arbitrum.io/rpc", token: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", decimals: 6 },
-      { chain: "Base", rpc: "https://mainnet.base.org", token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6 },
+      { chain: "Base", rpc: "https://base-rpc.publicnode.com", token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6 },
       { chain: "Optimism", rpc: "https://mainnet.optimism.io", token: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", decimals: 6 },
       { chain: "Polygon", rpc: "https://polygon-bor-rpc.publicnode.com", token: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", decimals: 6 },
       { chain: "Avalanche", rpc: "https://api.avax.network/ext/bc/C/rpc", token: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", decimals: 6 },
@@ -37,9 +37,9 @@ export const NATIVE_TOKENS: NativeTokenConfig[] = [
       { chain: "XDC", rpc: "https://earpc.xinfin.network", token: "0xfA2958CB79b0491CC627c1557F441eF849Ca8eb1", decimals: 6 },
       { chain: "World Chain", rpc: RPC.worldchain, token: "0x79A02482A880bCe3F13E09da970dC34dB4cD24D1", decimals: 6 },
       { chain: "Unichain", rpc: RPC.unichain, token: "0x078D782b760474a361dDA0AF3839290b0EF57AD6", decimals: 6 },
-      { chain: "Sei", rpc: RPC.sei, token: "0xe15fC38F6D8c56aF07bbCBe3BAf5708A2Bf42392", decimals: 6 },
-      { chain: "Ink", rpc: RPC.ink, token: "0x2D270e6886d130D724215A266106e6832161EAEd", decimals: 6 },
-      { chain: "Morph", rpc: RPC.morph, token: "0xCfb1186F4e93D60E60a8bDd997427D1F33bc372B", decimals: 6 },
+      { chain: "Sei", rpc: "https://sei-evm-rpc.publicnode.com", token: "0xe15fC38F6D8c56aF07bbCBe3BAf5708A2Bf42392", decimals: 6 },
+      { chain: "Ink", rpc: "https://rpc-gel.inkonchain.com", token: "0x2D270e6886d130D724215A266106e6832161EAEd", decimals: 6 },
+      { chain: "Morph", rpc: "https://rpc-quicknode.morphl2.io", token: "0xCfb1186F4e93D60E60a8bDd997427D1F33bc372B", decimals: 6 },
       { chain: "Codex", rpc: "https://rpc.codex.xyz", token: "0xd996633a415985DBd7D6D12f4A4343E31f5037cf", decimals: 6 },
       { chain: "EDGE", rpc: "https://edge-mainnet.g.alchemy.com/public", token: "0x98d2919b9A214E6Fa5384AC81E6864bA686Ad74c", decimals: 6 },
       { chain: "Pharos", rpc: "https://rpc.pharos.xyz", token: "0xC879C018dB60520F4355C26eD1a6D572cdAC1815", decimals: 6 },
@@ -58,17 +58,22 @@ export const NATIVE_TOKENS: NativeTokenConfig[] = [
 const TOTAL_SUPPLY_SELECTOR = "0x18160ddd";
 const ALERT_THRESHOLD_PCT = 30;
 
-const FETCH_HEADERS = { "Content-Type": "application/json", "User-Agent": "bridge-monitor/1.0" };
+const FETCH_HEADERS: Record<string, string> = { "Content-Type": "application/json", "User-Agent": "bridge-monitor/1.0" };
+
+function fetchWithTimeout(url: string, opts: RequestInit, ms = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timeout));
+}
 
 async function ethCall(rpcUrl: string, to: string, data: string): Promise<bigint | null> {
   try {
-    const res = await fetch(rpcUrl, {
+    const res = await fetchWithTimeout(rpcUrl, {
       method: "POST",
       headers: FETCH_HEADERS,
       body: JSON.stringify({ jsonrpc: "2.0", method: "eth_call", params: [{ to, data }, "latest"], id: 1 }),
-      cache: "no-store",
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.result && json.result !== "0x" && json.result !== "0x0") {
       return BigInt(json.result);
     }
@@ -80,13 +85,12 @@ async function ethCall(rpcUrl: string, to: string, data: string): Promise<bigint
 
 async function getSolanaSupply(rpcUrl: string, mint: string): Promise<number | null> {
   try {
-    const res = await fetch(rpcUrl, {
+    const res = await fetchWithTimeout(rpcUrl, {
       method: "POST",
       headers: FETCH_HEADERS,
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenSupply", params: [mint] }),
-      cache: "no-store",
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.result?.value?.amount) {
       return Number(BigInt(json.result.value.amount)) / 1e6;
     }
@@ -96,11 +100,10 @@ async function getSolanaSupply(rpcUrl: string, mint: string): Promise<number | n
 
 async function getSuiSupply(rpcUrl: string, coinType: string): Promise<number | null> {
   try {
-    const res = await fetch(rpcUrl, {
+    const res = await fetchWithTimeout(rpcUrl, {
       method: "POST",
       headers: FETCH_HEADERS,
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getTotalSupply", params: [coinType] }),
-      cache: "no-store",
     });
     const json = await res.json();
     if (json.result?.value) {
@@ -113,13 +116,13 @@ async function getSuiSupply(rpcUrl: string, coinType: string): Promise<number | 
 async function getAlgorandSupply(rpcUrl: string, assetId: string): Promise<number | null> {
   try {
     // Get creator address from asset info
-    const assetRes = await fetch(`${rpcUrl}/v2/assets/${assetId}`, { cache: "no-store" });
+    const assetRes = await fetchWithTimeout(`${rpcUrl}/v2/assets/${assetId}`, {});
     const assetData = await assetRes.json();
     const creator = assetData?.asset?.params?.creator;
     const total = BigInt(assetData?.asset?.params?.total ?? 0);
     if (!creator) return null;
     // Get creator's balance (reserve)
-    const balRes = await fetch(`${rpcUrl}/v2/accounts/${creator}/assets?asset-id=${assetId}`, { cache: "no-store" });
+    const balRes = await fetchWithTimeout(`${rpcUrl}/v2/accounts/${creator}/assets?asset-id=${assetId}`, {});
     const balData = await balRes.json();
     const reserve = BigInt(balData?.assets?.[0]?.amount ?? 0);
     return Number(total - reserve) / 1e6;
@@ -129,9 +132,8 @@ async function getAlgorandSupply(rpcUrl: string, assetId: string): Promise<numbe
 
 async function getAptosSupply(rpcUrl: string, moduleAddr: string): Promise<number | null> {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${rpcUrl}/accounts/${moduleAddr}/resource/0x1::fungible_asset::ConcurrentSupply`,
-      { cache: "no-store" }
     );
     const json = await res.json();
     const value = json?.data?.current?.value;
@@ -142,7 +144,7 @@ async function getAptosSupply(rpcUrl: string, moduleAddr: string): Promise<numbe
 
 async function getNobleSupply(rpcUrl: string, denom: string): Promise<number | null> {
   try {
-    const res = await fetch(`${rpcUrl}/cosmos/bank/v1beta1/supply/by_denom?denom=${denom}`, { cache: "no-store" });
+    const res = await fetchWithTimeout(`${rpcUrl}/cosmos/bank/v1beta1/supply/by_denom?denom=${denom}`, {});
     const json = await res.json();
     if (json?.amount?.amount) {
       return Number(BigInt(json.amount.amount)) / 1e6;
@@ -153,14 +155,13 @@ async function getNobleSupply(rpcUrl: string, denom: string): Promise<number | n
 
 async function getNearSupply(rpcUrl: string, accountId: string): Promise<number | null> {
   try {
-    const res = await fetch(rpcUrl, {
+    const res = await fetchWithTimeout(rpcUrl, {
       method: "POST",
       headers: FETCH_HEADERS,
       body: JSON.stringify({
         jsonrpc: "2.0", id: 1, method: "query",
         params: { request_type: "call_function", finality: "final", account_id: accountId, method_name: "ft_total_supply", args_base64: "e30=" },
       }),
-      cache: "no-store",
     });
     const json = await res.json();
     if (json.result?.result) {
@@ -173,11 +174,10 @@ async function getNearSupply(rpcUrl: string, accountId: string): Promise<number 
 
 async function getXrplSupply(rpcUrl: string, issuer: string): Promise<number | null> {
   try {
-    const res = await fetch(rpcUrl, {
+    const res = await fetchWithTimeout(rpcUrl, {
       method: "POST",
       headers: FETCH_HEADERS,
       body: JSON.stringify({ method: "gateway_balances", params: [{ account: issuer, hotwallet: [], ledger_index: "validated" }] }),
-      cache: "no-store",
     });
     const json = await res.json();
     const obligations = json?.result?.obligations;
@@ -193,9 +193,8 @@ async function getXrplSupply(rpcUrl: string, issuer: string): Promise<number | n
 
 async function getStellarSupply(rpcUrl: string, issuer: string): Promise<number | null> {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${rpcUrl}/assets?asset_code=USDC&asset_issuer=${issuer}&limit=1`,
-      { cache: "no-store" }
     );
     const json = await res.json();
     const record = json?._embedded?.records?.[0];
@@ -211,14 +210,13 @@ async function getStellarSupply(rpcUrl: string, issuer: string): Promise<number 
 
 async function getStarknetSupply(rpcUrl: string, contract: string): Promise<number | null> {
   try {
-    const res = await fetch(rpcUrl, {
+    const res = await fetchWithTimeout(rpcUrl, {
       method: "POST",
       headers: FETCH_HEADERS,
       body: JSON.stringify({
         jsonrpc: "2.0", id: 1, method: "starknet_call",
         params: [{ contract_address: contract, entry_point_selector: "0x1557182e4359a1f0c6301278e8f5b35a776ab58d39892581e357578fb287836", calldata: [] }, "latest"],
       }),
-      cache: "no-store",
     });
     const json = await res.json();
     if (json.result) {
@@ -289,26 +287,31 @@ export async function checkNativeTokens(): Promise<NativeTokenResult[]> {
   const results: NativeTokenResult[] = [];
 
   for (const config of NATIVE_TOKENS) {
-    const supplies = await Promise.all(
-      config.chains.map(async (c): Promise<ChainSupply> => {
-        const supply = await getChainSupply(c);
-        const prev = previousChainSupplies[config.symbol]?.[c.chain] ?? null;
+    const supplies: ChainSupply[] = [];
+    for (let i = 0; i < config.chains.length; i += 12) {
+      const chunk = config.chains.slice(i, i + 12);
+      const chunkResults = await Promise.all(
+        chunk.map(async (c): Promise<ChainSupply> => {
+          const supply = await getChainSupply(c);
+          const prev = previousChainSupplies[config.symbol]?.[c.chain] ?? null;
 
-        let change: number | null = null;
-        let changePct: number | null = null;
-        let alert = false;
+          let change: number | null = null;
+          let changePct: number | null = null;
+          let alert = false;
 
-        if (supply !== null && prev !== null) {
-          change = supply - prev;
-          changePct = prev > 0 ? (change / prev) * 100 : 0;
-          if (Math.abs(changePct) > ALERT_THRESHOLD_PCT) {
-            alert = true;
+          if (supply !== null && prev !== null) {
+            change = supply - prev;
+            changePct = prev > 0 ? (change / prev) * 100 : 0;
+            if (Math.abs(changePct) > ALERT_THRESHOLD_PCT) {
+              alert = true;
+            }
           }
-        }
 
-        return { chain: c.chain, token: c.token, supply, prevSupply: prev, change, changePct, alert };
-      })
-    );
+          return { chain: c.chain, token: c.token, supply, prevSupply: prev, change, changePct, alert };
+        })
+      );
+      supplies.push(...chunkResults);
+    }
 
     const successChains = supplies.filter((s) => s.supply !== null);
     const totalSupply = successChains.reduce((sum, s) => sum + (s.supply ?? 0), 0);

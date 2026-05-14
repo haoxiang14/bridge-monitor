@@ -1,7 +1,9 @@
-import { RPC, BridgeConfig, L2Target } from "./bridges";
+import { RPC, RPC_LIST, BridgeConfig, L2Target } from "./bridges";
 
-async function ethCall(rpcUrl: string, to: string, data: string): Promise<bigint | null> {
+async function ethCallSingle(rpcUrl: string, to: string, data: string): Promise<bigint | null> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(rpcUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -11,15 +13,30 @@ async function ethCall(rpcUrl: string, to: string, data: string): Promise<bigint
         params: [{ to, data }, "latest"],
         id: 1,
       }),
-      cache: "no-store",
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.result && json.result !== "0x" && json.result !== "0x0") {
       return BigInt(json.result);
     }
   } catch (e) {
-    console.error(`[RPC ERROR] ${rpcUrl}:`, e);
+    // silent, will try fallback
+  }
+  return null;
+}
+
+async function ethCall(rpcUrl: string, to: string, data: string): Promise<bigint | null> {
+  const result = await ethCallSingle(rpcUrl, to, data);
+  if (result !== null) return result;
+
+  const chain = Object.entries(RPC).find(([, url]) => url === rpcUrl)?.[0];
+  if (chain && RPC_LIST[chain]) {
+    for (const fallback of RPC_LIST[chain].slice(1)) {
+      const fallbackResult = await ethCallSingle(fallback, to, data);
+      if (fallbackResult !== null) return fallbackResult;
+    }
   }
   return null;
 }
@@ -32,6 +49,8 @@ const TOTAL_SUPPLY_SELECTOR = "0x18160ddd";
 
 async function getSolanaTokenSupply(rpcUrl: string, mintAddress: string): Promise<bigint | null> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(rpcUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -41,10 +60,11 @@ async function getSolanaTokenSupply(rpcUrl: string, mintAddress: string): Promis
         method: "getTokenSupply",
         params: [mintAddress],
       }),
-      cache: "no-store",
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.result?.value?.amount) {
       return BigInt(json.result.value.amount);
     }
@@ -107,7 +127,12 @@ export async function checkBridge(config: BridgeConfig): Promise<ReconcileResult
   const lockedRaw = await ethCall(l1Rpc, config.l1Token, balanceOfCalldata(config.l1Lock));
 
   if (config.l2Targets && config.l2Targets.length > 0) {
-    const supplies = await Promise.all(config.l2Targets.map(getL2Supply));
+    const supplies: { raw: bigint | null; decimals: number }[] = [];
+    for (let i = 0; i < config.l2Targets.length; i += 10) {
+      const chunk = config.l2Targets.slice(i, i + 10);
+      const chunkResults = await Promise.all(chunk.map(getL2Supply));
+      supplies.push(...chunkResults);
+    }
     const l1Divisor = 10 ** config.decimals;
     const locked = lockedRaw !== null ? Number(lockedRaw) / l1Divisor : null;
 
@@ -166,6 +191,16 @@ export async function checkBridge(config: BridgeConfig): Promise<ReconcileResult
   return result;
 }
 
+async function batch<T>(items: T[], fn: (item: T) => Promise<unknown>, size: number): Promise<void> {
+  for (let i = 0; i < items.length; i += size) {
+    await Promise.all(items.slice(i, i + size).map(fn));
+  }
+}
+
 export async function checkAllBridges(bridges: BridgeConfig[]): Promise<ReconcileResult[]> {
-  return Promise.all(bridges.map(checkBridge));
+  const results: ReconcileResult[] = [];
+  for (const bridge of bridges) {
+    results.push(await checkBridge(bridge));
+  }
+  return results;
 }

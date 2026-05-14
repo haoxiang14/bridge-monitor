@@ -14,10 +14,8 @@ const CORS_HEADERS = {
 };
 
 async function handleReconcile(env: Env): Promise<Response> {
-  const [results, nativeTokens] = await Promise.all([
-    checkAllBridges(BRIDGES),
-    checkNativeTokens(),
-  ]);
+  const results = await checkAllBridges(BRIDGES);
+  const nativeTokens = await checkNativeTokens();
 
   if (env.LARK_WEBHOOK_URL) {
     const alerts = results.filter((r) => r.status === "ALERT");
@@ -48,10 +46,8 @@ export default {
   },
 
   async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
-    const [results] = await Promise.all([
-      checkAllBridges(BRIDGES),
-      checkNativeTokens(),
-    ]);
+    const results = await checkAllBridges(BRIDGES);
+    await checkNativeTokens();
 
     if (env.LARK_WEBHOOK_URL) {
       const alerts = results.filter((r) => r.status === "ALERT");

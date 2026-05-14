@@ -1,29 +1,33 @@
-export const RPC: Record<string, string> = {
-  ethereum: "https://ethereum-rpc.publicnode.com",
-  mantle: "https://rpc.mantle.xyz",
-  optimism: "https://mainnet.optimism.io",
-  polygon: "https://polygon-bor-rpc.publicnode.com",
-  worldchain: "https://worldchain-mainnet.g.alchemy.com/public",
-  hyperevm: "https://rpc.hyperliquid.xyz/evm",
-  solana: "https://api.mainnet-beta.solana.com",
-  arbitrum: "https://arb1.arbitrum.io/rpc",
-  berachain: "https://rpc.berachain.com",
-  conflux: "https://evm.confluxrpc.com",
-  corn: "https://mainnet.corn-rpc.com",
-  flare: "https://flare-api.flare.network/ext/C/rpc",
-  hedera: "https://mainnet.hashio.io/api",
-  ink: "https://rpc-gel.inkonchain.com",
-  megaeth: "https://mainnet.megaeth.com/rpc",
-  monad: "https://rpc.monad.xyz",
-  morph: "https://rpc.morph.network",
-  plasma: "https://plasma.drpc.org",
-  rootstock: "https://public-node.rsk.co",
-  sei: "https://evm-rpc.sei-apis.com",
-  stable: "https://rpc.stable.xyz",
-  tempo: "https://rpc.tempo.xyz",
-  unichain: "https://mainnet.unichain.org",
-  xlayer: "https://rpc.xlayer.tech",
+export const RPC_LIST: Record<string, string[]> = {
+  ethereum: ["https://ethereum-rpc.publicnode.com", "https://1rpc.io/eth"],
+  mantle: ["https://rpc.mantle.xyz", "https://mantle-rpc.publicnode.com"],
+  optimism: ["https://optimism-rpc.publicnode.com", "https://mainnet.optimism.io"],
+  polygon: ["https://polygon-bor-rpc.publicnode.com", "https://1rpc.io/matic"],
+  worldchain: ["https://worldchain-mainnet.g.alchemy.com/public"],
+  hyperevm: ["https://rpc.hyperliquid.xyz/evm"],
+  solana: ["https://api.mainnet-beta.solana.com"],
+  arbitrum: ["https://arbitrum-one-rpc.publicnode.com", "https://arb1.arbitrum.io/rpc"],
+  berachain: ["https://rpc.berachain.com"],
+  conflux: ["https://evm.confluxrpc.com"],
+  corn: ["https://mainnet.corn-rpc.com"],
+  flare: ["https://flare-api.flare.network/ext/C/rpc"],
+  hedera: ["https://mainnet.hashio.io/api"],
+  ink: ["https://rpc-gel.inkonchain.com"],
+  megaeth: ["https://mainnet.megaeth.com/rpc"],
+  monad: ["https://rpc.monad.xyz"],
+  morph: ["https://rpc-quicknode.morphl2.io", "https://rpc.morph.network"],
+  plasma: ["https://plasma.drpc.org"],
+  rootstock: ["https://public-node.rsk.co"],
+  sei: ["https://sei-evm-rpc.publicnode.com", "https://evm-rpc.sei-apis.com"],
+  stable: ["https://rpc.stable.xyz"],
+  tempo: ["https://rpc.tempo.xyz"],
+  unichain: ["https://mainnet.unichain.org"],
+  xlayer: ["https://rpc.xlayer.tech"],
 };
+
+export const RPC: Record<string, string> = Object.fromEntries(
+  Object.entries(RPC_LIST).map(([k, v]) => [k, v[0]])
+);
 
 export interface L2Target {
   l2Token: string;

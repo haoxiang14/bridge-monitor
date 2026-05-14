@@ -135,6 +135,7 @@ async function getAptosSupply(rpcUrl: string, moduleAddr: string): Promise<numbe
   try {
     const res = await fetchWithTimeout(
       `${rpcUrl}/accounts/${moduleAddr}/resource/0x1::fungible_asset::ConcurrentSupply`,
+      {},
     );
     const json = await res.json();
     const value = json?.data?.current?.value;
@@ -196,6 +197,7 @@ async function getStellarSupply(rpcUrl: string, issuer: string): Promise<number 
   try {
     const res = await fetchWithTimeout(
       `${rpcUrl}/assets?asset_code=USDC&asset_issuer=${issuer}&limit=1`,
+      {},
     );
     const json = await res.json();
     const record = json?._embedded?.records?.[0];

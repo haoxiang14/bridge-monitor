@@ -170,8 +170,7 @@ export default function Dashboard() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/reconcile";
-      const res = await fetch(apiUrl);
+      const res = await fetch("/api/reconcile");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: ApiResponse = await res.json();
       setData(json);

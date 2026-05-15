@@ -74,6 +74,45 @@ async function getSolanaTokenSupply(rpcUrl: string, mintAddress: string): Promis
   return null;
 }
 
+async function getTonJettonSupply(apiBase: string, masterAddress: string, decimals: number): Promise<number | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(
+      `${apiBase}/jetton/masters?address=${encodeURIComponent(masterAddress)}&limit=1`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    const json: any = await res.json();
+    const master = json?.jetton_masters?.[0] ?? json;
+    const totalSupply = master?.total_supply ?? master?.jetton_content?.total_supply;
+    if (totalSupply) {
+      return Number(BigInt(String(totalSupply))) / (10 ** decimals);
+    }
+  } catch (e) {
+    console.error(`[TON RPC ERROR] ${apiBase}:`, e);
+  }
+  return null;
+}
+
+async function getAptosSupply(rpcUrl: string, moduleAddr: string, decimals: number): Promise<number | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(
+      `${rpcUrl}/accounts/${moduleAddr}/resource/0x1::fungible_asset::ConcurrentSupply`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    const json: any = await res.json();
+    const value = json?.data?.current?.value;
+    if (value) return Number(BigInt(String(value))) / (10 ** decimals);
+  } catch (e) {
+    console.error(`[APTOS RPC ERROR] ${rpcUrl}:`, e);
+  }
+  return null;
+}
+
 export interface L2Breakdown {
   label: string;
   token: string;
@@ -101,6 +140,16 @@ async function getL2Supply(target: L2Target): Promise<{ raw: bigint | null; deci
   if (target.l2Type === "solana") {
     const raw = await getSolanaTokenSupply(rpcUrl, target.l2Token);
     return { raw, decimals: target.l2Decimals ?? 9 };
+  }
+  if (target.l2Type === "ton") {
+    const supply = await getTonJettonSupply(rpcUrl, target.l2Token, target.l2Decimals ?? 6);
+    const raw = supply !== null ? BigInt(Math.round(supply * (10 ** (target.l2Decimals ?? 6)))) : null;
+    return { raw, decimals: target.l2Decimals ?? 6 };
+  }
+  if (target.l2Type === "aptos") {
+    const supply = await getAptosSupply(rpcUrl, target.l2Token, target.l2Decimals ?? 6);
+    const raw = supply !== null ? BigInt(Math.round(supply * (10 ** (target.l2Decimals ?? 6)))) : null;
+    return { raw, decimals: target.l2Decimals ?? 6 };
   }
   const raw = await ethCall(rpcUrl, target.l2Token, TOTAL_SUPPLY_SELECTOR);
   return { raw, decimals: target.l2Decimals ?? 18 };

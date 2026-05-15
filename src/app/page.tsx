@@ -137,6 +137,22 @@ const CHAIN_EXPLORERS: Record<string, { name: string; url: string }> = {
   "Pharos": { name: "Pharos Explorer", url: "https://explorer.pharos.xyz/address/" },
   "Plume": { name: "Plume Explorer", url: "https://explorer.plume.org/address/" },
   "Starknet": { name: "Starkscan", url: "https://starkscan.co/contract/" },
+  // USDe OFT chains
+  "Ethereum (Lockbox)": { name: "Etherscan", url: "https://etherscan.io/address/" },
+  "MegaETH": { name: "MegaETH Explorer", url: "https://megaexplorer.xyz/address/" },
+  "BNB Chain": { name: "BscScan", url: "https://bscscan.com/address/" },
+  "Plasma": { name: "Plasma Explorer", url: "https://explorer.plasma.io/address/" },
+  "Blast": { name: "Blastscan", url: "https://blastscan.io/address/" },
+  "Zircuit": { name: "Zircuit Explorer", url: "https://explorer.zircuit.com/address/" },
+  "Swell": { name: "Swell Explorer", url: "https://explorer.swellnetwork.io/address/" },
+  "Fraxtal": { name: "Fraxscan", url: "https://fraxscan.com/address/" },
+  "Scroll": { name: "Scrollscan", url: "https://scrollscan.com/address/" },
+  "Manta": { name: "Manta Explorer", url: "https://pacific-explorer.manta.network/address/" },
+  "Mode": { name: "Mode Explorer", url: "https://explorer.mode.network/address/" },
+  "Metis": { name: "Andromeda Explorer", url: "https://andromeda-explorer.metis.io/address/" },
+  "Kava": { name: "Kava Explorer", url: "https://explorer.kava.io/address/" },
+  "zkSync": { name: "zkSync Explorer", url: "https://explorer.zksync.io/address/" },
+  "TON": { name: "Tonscan", url: "https://tonscan.org/jetton/" },
 };
 
 function getExplorer(addr: string): { name: string; url: string } {

@@ -23,6 +23,24 @@ export const RPC_LIST: Record<string, string[]> = {
   tempo: ["https://rpc.tempo.xyz"],
   unichain: ["https://mainnet.unichain.org"],
   xlayer: ["https://rpc.xlayer.tech"],
+  // USDe OFT chains
+  bnb: ["https://bsc-rpc.publicnode.com", "https://bsc-dataseed.binance.org"],
+  avalanche: ["https://api.avax.network/ext/bc/C/rpc", "https://avalanche-c-chain-rpc.publicnode.com"],
+  zircuit: ["https://zircuit1-mainnet.p2pify.com", "https://48900.rpc.thirdweb.com"],
+  swell: ["https://swell-mainnet.alt.technology"],
+  base: ["https://mainnet.base.org", "https://base-rpc.publicnode.com"],
+  fraxtal: ["https://rpc.frax.com"],
+  scroll: ["https://rpc.scroll.io", "https://scroll.drpc.org"],
+  manta: ["https://pacific-rpc.manta.network/http"],
+  mode: ["https://mainnet.mode.network"],
+  metis: ["https://andromeda.metis.io/?owner=1088"],
+  kava: ["https://evm.kava.io", "https://kava-evm-rpc.publicnode.com"],
+  zksync: ["https://mainnet.era.zksync.io"],
+  blast: ["https://rpc.blast.io", "https://blast-rpc.publicnode.com"],
+  linea: ["https://rpc.linea.build", "https://linea.drpc.org"],
+  ton: ["https://toncenter.com/api/v3"],
+  aptos: ["https://fullnode.mainnet.aptoslabs.com/v1"],
+  celo: ["https://forno.celo.org", "https://celo-rpc.publicnode.com"],
 };
 
 export const RPC: Record<string, string> = Object.fromEntries(
@@ -32,7 +50,7 @@ export const RPC: Record<string, string> = Object.fromEntries(
 export interface L2Target {
   l2Token: string;
   l2Rpc: keyof typeof RPC;
-  l2Type?: "evm" | "solana";
+  l2Type?: "evm" | "solana" | "ton" | "aptos";
   l2Decimals?: number;
   label: string;
 }
@@ -192,6 +210,87 @@ export const BRIDGES: BridgeConfig[] = [
       { l2Token: "0x20C00000000000000000000014f22CA97301EB73", l2Rpc: "tempo", l2Decimals: 6, label: "Tempo" },
       { l2Token: "0x9151434b16b9763660705744891fA906F660EcC5", l2Rpc: "unichain", l2Decimals: 6, label: "Unichain" },
       { l2Token: "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", l2Rpc: "xlayer", l2Decimals: 6, label: "XLayer" },
+    ],
+  },
+  // === USDe (Ethena) — LayerZero OFT Adapter ===
+  // Lock-and-mint: Ethereum adapter locks USDe; remote OFTs mint on demand.
+  // l1Lock = OFT Adapter (also the OFT contract address on Ethereum)
+  // l1Token = USDe ERC-20 on Ethereum
+  {
+    bridge: "Ethena USDe OFT",
+    bridgeUrl: "https://ethena.fi",
+    path: "Ethereum <> 26 Chains",
+    token: "USDe",
+    l1Token: "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+    l1Lock: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34",
+    l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34",
+    l1Rpc: "ethereum",
+    l2Rpc: "megaeth",
+    decimals: 18,
+    l2Targets: [
+      // EVM OFT chains (standard address)
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "megaeth",   l2Decimals: 18, label: "MegaETH" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "bnb",       l2Decimals: 18, label: "BNB Chain" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "mantle",    l2Decimals: 18, label: "Mantle" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "plasma",    l2Decimals: 18, label: "Plasma" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "hyperevm",  l2Decimals: 18, label: "HyperEVM" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "berachain", l2Decimals: 18, label: "Berachain" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "arbitrum",  l2Decimals: 18, label: "Arbitrum" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "blast",     l2Decimals: 18, label: "Blast" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "avalanche", l2Decimals: 18, label: "Avalanche" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "zircuit",   l2Decimals: 18, label: "Zircuit" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "swell",     l2Decimals: 18, label: "Swell" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "base",      l2Decimals: 18, label: "Base" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "morph",     l2Decimals: 18, label: "Morph" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "fraxtal",   l2Decimals: 18, label: "Fraxtal" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "ink",       l2Decimals: 18, label: "Ink" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "optimism",  l2Decimals: 18, label: "Optimism" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "linea",     l2Decimals: 18, label: "Linea" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "scroll",    l2Decimals: 18, label: "Scroll" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "manta",     l2Decimals: 18, label: "Manta" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "mode",      l2Decimals: 18, label: "Mode" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "metis",     l2Decimals: 18, label: "Metis" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "kava",      l2Decimals: 18, label: "Kava" },
+      { l2Token: "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", l2Rpc: "xlayer",    l2Decimals: 18, label: "XLayer" },
+      // EVM OFT (non-standard address)
+      { l2Token: "0x39fe7a0dacce31bd90418e3e659fb0b5f0b3db0d", l2Rpc: "zksync",    l2Decimals: 18, label: "zkSync" },
+      // Non-EVM
+      { l2Token: "DEkqHyPN7GMRJ5cArtQFAWefqbZb33Hyf6s5iCwjEonT", l2Rpc: "solana", l2Type: "solana", l2Decimals: 9,  label: "Solana" },
+      { l2Token: "EQAIb6KmdfdDR7CN1GBqVJuP25iCnLKCvBlJ07Evuu2dzP5f", l2Rpc: "ton", l2Type: "ton",    l2Decimals: 6,  label: "TON" },
+      { l2Token: "0xf37a8864fe737eb8ec2c2931047047cbaed1beed3fb0e5b7c5526dafd3b9c2e9", l2Rpc: "aptos", l2Type: "aptos", l2Decimals: 6, label: "Aptos" },
+    ],
+  },
+  // === XAUt0 (Tether Gold) — LayerZero OFT Adapter ===
+  // Lock-and-mint: Ethereum adapter locks XAUt; remote chains mint XAUt0 (separate Token + OFT pattern).
+  // l1Token = XAUt ERC-20; l1Lock = OFT Adapter
+  // EVM remote: totalSupply() on Token address (not OFT address)
+  {
+    bridge: "XAUt0 OFT",
+    bridgeUrl: "https://tether.to/en/transparency/#xaut",
+    path: "Ethereum <> 11 Chains",
+    token: "XAUt0",
+    l1Token: "0x68749665FF8D2d112Fa859AA293F07A622782F38",
+    l1Lock: "0xb9c2321BB7D0Db468f570D10A424d1Cc8EFd696C",
+    l2Token: "0x01bFF41798a0BcF287b996046Ca68b395DbC1071",
+    l1Rpc: "ethereum",
+    l2Rpc: "monad",
+    decimals: 6,
+    l2Targets: [
+      // EVM: totalSupply() on Token address
+      { l2Token: "0x01bFF41798a0BcF287b996046Ca68b395DbC1071", l2Rpc: "monad",     l2Decimals: 6, label: "Monad" },
+      { l2Token: "0xf4D9235269a96aaDaFc9aDAe454a0618eBE37949", l2Rpc: "hyperevm",  l2Decimals: 6, label: "HyperEVM" },
+      { l2Token: "0x21cAef8A43163Eea865baeE23b9C2E327696A3bf", l2Rpc: "bnb",       l2Decimals: 6, label: "BNB Chain" },
+      { l2Token: "0x1B64B9025EEbb9A6239575dF9Ea4b9Ac46D4d193", l2Rpc: "plasma",    l2Decimals: 6, label: "Plasma" },
+      { l2Token: "0x2775d5105276781B4b85bA6eA6a6653bEeD1dd32", l2Rpc: "avalanche", l2Decimals: 6, label: "Avalanche" },
+      { l2Token: "0x40461291347e1eCbb09499F3371D3f17f10d7159", l2Rpc: "arbitrum",  l2Decimals: 6, label: "Arbitrum" },
+      { l2Token: "0xaf37E8B6C9ED7f6318979f56Fc287d76c30847ff", l2Rpc: "celo",      l2Decimals: 6, label: "Celo" },
+      { l2Token: "0xACc6EFBE554397b741BaAdEcF0120780b858f5F4", l2Rpc: "conflux",   l2Decimals: 6, label: "Conflux eSpace" },
+      { l2Token: "0xF50258D3c1dd88946C567920B986A12e65b50dAc", l2Rpc: "ink",       l2Decimals: 6, label: "Ink" },
+      { l2Token: "0xF1815bd50389c46847f0Bda824eC8da914045d14", l2Rpc: "polygon",   l2Decimals: 6, label: "Polygon" },
+      // Non-EVM
+      { l2Token: "AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P", l2Rpc: "solana", l2Type: "solana", l2Decimals: 6, label: "Solana" },
+      { l2Token: "EQA1R_LuQCLHlMgOo1S4G7Y7W1cd0FrAkbA10Zq7rddKxi9k", l2Rpc: "ton", l2Type: "ton", l2Decimals: 6, label: "TON" },
+      // Stable chain omitted — RPC unavailable
     ],
   },
 ];

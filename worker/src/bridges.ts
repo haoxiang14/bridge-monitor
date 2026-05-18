@@ -108,6 +108,18 @@ export const BRIDGES: BridgeConfig[] = [
     l2Rpc: "mantle",
     decimals: 8,
   },
+  {
+    bridge: "Mantle Official Bridge",
+    bridgeUrl: "https://app.mantle.xyz/bridge",
+    path: "Ethereum <> Mantle",
+    token: "XAUT",
+    l1Token: "0x68749665FF8D2d112Fa859AA293F07A622782F38",
+    l1Lock: "0x95fC37A27a2f68e3A647CDc081F0A89bb47c3012",
+    l2Token: "0x6199CCd9273A1E0e41e2cC18d9dAcd1E9382F58E",
+    l1Rpc: "ethereum",
+    l2Rpc: "mantle",
+    decimals: 6,
+  },
   // === Super Bridge ===
   {
     bridge: "Super Bridge",

@@ -84,6 +84,7 @@ const EXPLORER_URLS: Record<string, { name: string; url: string }> = {
   "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9": { name: "Mantlescan", url: "https://mantlescan.xyz/address/" },
   "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE": { name: "Mantlescan", url: "https://mantlescan.xyz/address/" },
   "0xCAbAE6f6Ea1ecaB08Ad02fE02ce9A44F09aebfA2": { name: "Mantlescan", url: "https://mantlescan.xyz/address/" },
+  "0x6199CCd9273A1E0e41e2cC18d9dAcd1E9382F58E": { name: "Mantlescan", url: "https://mantlescan.xyz/address/" },
   "0x2cfc85d8e48f8eab294be644d9e25c3030863003": { name: "Worldscan", url: "https://worldscan.org/address/" },
   "0xdc6ff44d5d932cbd77b52e5612ba0529dc6226f1": { name: "OP Etherscan", url: "https://optimistic.etherscan.io/address/" },
   "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174": { name: "Polygonscan", url: "https://polygonscan.com/address/" },

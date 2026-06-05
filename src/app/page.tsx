@@ -140,9 +140,7 @@ const CHAIN_EXPLORERS: Record<string, { name: string; url: string }> = {
   "Starknet": { name: "Starkscan", url: "https://starkscan.co/contract/" },
   // USDe OFT chains
   "Ethereum (Lockbox)": { name: "Etherscan", url: "https://etherscan.io/address/" },
-  "MegaETH": { name: "MegaETH Explorer", url: "https://megaexplorer.xyz/address/" },
   "BNB Chain": { name: "BscScan", url: "https://bscscan.com/address/" },
-  "Plasma": { name: "Plasma Explorer", url: "https://explorer.plasma.io/address/" },
   "Blast": { name: "Blastscan", url: "https://blastscan.io/address/" },
   "Zircuit": { name: "Zircuit Explorer", url: "https://explorer.zircuit.com/address/" },
   "Swell": { name: "Swell Explorer", url: "https://explorer.swellnetwork.io/address/" },

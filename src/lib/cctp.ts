@@ -230,17 +230,6 @@ async function getStarknetSupply(rpcUrl: string, contract: string): Promise<numb
     }
   } catch (e) { console.error(`[STARKNET ERROR]`, e); }
   return null;
-}&limit=1`, {
-      headers: FETCH_HEADERS,
-    });
-    const json = await res.json();
-    const master = json?.jetton_masters?.[0] ?? json;
-    const totalSupply = master?.total_supply ?? master?.jetton_content?.total_supply;
-    if (totalSupply) {
-      return Number(BigInt(String(totalSupply))) / (10 ** decimals);
-    }
-  } catch (e) { console.error(`[TON ERROR]`, e); }
-  return null;
 }
 
 async function getChainSupplySingle(rpc: string, chain: NativeTokenChain): Promise<number | null> {

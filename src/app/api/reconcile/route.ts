@@ -1,14 +1,16 @@
 import { BRIDGES } from "@/lib/bridges";
 import { checkAllBridges } from "@/lib/rpc";
 import { checkNativeTokens } from "@/lib/cctp";
+import { checkXStocks } from "@/lib/xstocks";
 import { sendLarkAlert } from "@/lib/lark";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [results, nativeTokens] = await Promise.all([
+  const [results, nativeTokens, xstocks] = await Promise.all([
     checkAllBridges(BRIDGES),
     checkNativeTokens(),
+    checkXStocks(),
   ]);
 
   const larkUrl = process.env.LARK_WEBHOOK_URL;
@@ -24,5 +26,6 @@ export async function GET() {
     larkEnabled: !!larkUrl,
     results,
     nativeTokens,
+    xstocks,
   });
 }

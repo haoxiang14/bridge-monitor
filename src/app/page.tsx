@@ -65,11 +65,42 @@ interface NativeTokenResult {
   timestamp: string;
 }
 
+interface XStocksChainDetail {
+  chain: string;
+  token: string;
+  totalSupply: number | null;
+  systemHeld: number | null;
+  circulating: number | null;
+}
+
+interface XStocksSystemWallet {
+  chain: string;
+  address: string;
+  balance: number | null;
+}
+
+interface XStocksResult {
+  symbol: string;
+  underlying: string;
+  totalSupply: number | null;
+  systemHeld: number | null;
+  circulating: number | null;
+  sharesHeld: number | null;
+  porCirculating: number | null;
+  chainCount: number;
+  successCount: number;
+  chains: XStocksChainDetail[];
+  systemWallets: XStocksSystemWallet[];
+  status: "OK" | "ERROR";
+  timestamp: string;
+}
+
 interface ApiResponse {
   timestamp: string;
   larkEnabled: boolean;
   results: ReconcileResult[];
   nativeTokens: NativeTokenResult[];
+  xstocks: XStocksResult[];
 }
 
 const POLL_INTERVAL = 300_000;
@@ -152,6 +183,9 @@ const CHAIN_EXPLORERS: Record<string, { name: string; url: string }> = {
   "Kava": { name: "Kava Explorer", url: "https://explorer.kava.io/address/" },
   "zkSync": { name: "zkSync Explorer", url: "https://explorer.zksync.io/address/" },
   "TON": { name: "Tonscan", url: "https://tonscan.org/jetton/" },
+  // xStocks chains
+  "BSC": { name: "BscScan", url: "https://bscscan.com/address/" },
+  "Tron": { name: "Tronscan", url: "https://tronscan.org/#/contract/" },
 };
 
 function getExplorer(addr: string): { name: string; url: string } {
@@ -181,6 +215,7 @@ export default function Dashboard() {
   const [countdown, setCountdown] = useState(POLL_INTERVAL / 1000);
   const [selected, setSelected] = useState<ReconcileResult | null>(null);
   const [selectedNative, setSelectedNative] = useState<NativeTokenResult | null>(null);
+  const [selectedXStock, setSelectedXStock] = useState<XStocksResult | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -475,6 +510,86 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* xStocks Section */}
+        {data?.xstocks && data.xstocks.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              xStocks 代币化股票
+            </h2>
+            <div className="rounded-xl bg-card border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Token</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Underlying</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Total Supply</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">System Held</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Circulating</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Shares Held</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Reserve</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Chains</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-center">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.xstocks.map((xs, i) => (
+                    <TableRow
+                      key={i}
+                      onClick={() => setSelectedXStock(xs)}
+                      className="cursor-pointer transition-colors border-border hover:bg-accent/50"
+                    >
+                      <TableCell>
+                        <span className="font-mono text-sm font-medium text-foreground">{xs.symbol}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">{xs.underlying}</span>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {formatNumber(xs.totalSupply)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm text-amber-400">
+                        {formatNumber(xs.systemHeld)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm text-emerald-400">
+                        {formatNumber(xs.circulating)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm text-blue-400">
+                        {formatNumber(xs.sharesHeld)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {xs.circulating !== null && xs.sharesHeld !== null && xs.circulating > 0 ? (
+                          <span className={xs.sharesHeld >= xs.circulating ? "text-emerald-400" : "text-red-400"}>
+                            {((xs.sharesHeld / xs.circulating) * 100).toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        <span className="text-muted-foreground">{xs.successCount}/{xs.chainCount}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {xs.status === "OK" && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            OK
+                          </span>
+                        )}
+                        {xs.status === "ERROR" && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-red-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                            ERROR
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <footer className="text-xs text-muted-foreground text-center">
           Polling every 5 minutes via public RPCs | Click a row for contract details
@@ -736,6 +851,146 @@ export default function Dashboard() {
               {/* Timestamp */}
               <div className="text-[10px] text-muted-foreground text-right">
                 Last checked: {new Date(selectedNative.timestamp).toLocaleString()}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* xStocks Detail Modal */}
+      <Dialog open={!!selectedXStock} onOpenChange={(open) => !open && setSelectedXStock(null)}>
+        <DialogContent className="bg-card border-border !max-w-4xl !w-[85vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 pr-8">
+              <span className="text-lg">{selectedXStock?.symbol}</span>
+              <span className="text-muted-foreground font-normal">— {selectedXStock?.underlying}</span>
+              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                {selectedXStock?.successCount}/{selectedXStock?.chainCount} chains
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedXStock && (
+            <div className="space-y-5 mt-2 max-h-[70vh] overflow-y-auto pr-1">
+              {/* Summary */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Total Supply (on-chain)</div>
+                  <div className="font-mono text-sm text-foreground">{formatFull(selectedXStock.totalSupply)}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">System Held (Locked)</div>
+                  <div className="font-mono text-sm text-amber-400">{formatFull(selectedXStock.systemHeld)}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Circulating (on-chain calc)</div>
+                  <div className="font-mono text-sm text-emerald-400">{formatFull(selectedXStock.circulating)}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Circulating (PoR API)</div>
+                  <div className="font-mono text-sm text-foreground">{formatFull(selectedXStock.porCirculating)}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Shares Held (PoR)</div>
+                  <div className="font-mono text-sm text-blue-400">{formatFull(selectedXStock.sharesHeld)}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Reserve Ratio</div>
+                  <div className={`font-mono text-sm ${selectedXStock.circulating && selectedXStock.sharesHeld && selectedXStock.sharesHeld >= selectedXStock.circulating ? "text-emerald-400" : "text-red-400"}`}>
+                    {selectedXStock.circulating && selectedXStock.sharesHeld ? ((selectedXStock.sharesHeld / selectedXStock.circulating) * 100).toFixed(2) + "%" : "—"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Per-chain breakdown */}
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Chain Breakdown</div>
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-secondary/50 border-b border-border">
+                        <th className="text-left px-3 py-2 text-muted-foreground font-medium">Chain</th>
+                        <th className="text-left px-3 py-2 text-muted-foreground font-medium">Contract</th>
+                        <th className="text-right px-3 py-2 text-muted-foreground font-medium">Total Supply</th>
+                        <th className="text-right px-3 py-2 text-muted-foreground font-medium">System Held</th>
+                        <th className="text-right px-3 py-2 text-muted-foreground font-medium">Circulating</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedXStock.chains
+                        .filter((c) => c.totalSupply !== null)
+                        .sort((a, b) => (b.circulating ?? 0) - (a.circulating ?? 0))
+                        .map((c, i) => {
+                          const explorer = CHAIN_EXPLORERS[c.chain] ?? { name: "Explorer", url: "https://etherscan.io/address/" };
+                          return (
+                            <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                              <td className="px-3 py-1.5 text-foreground">{c.chain}</td>
+                              <td className="px-3 py-1.5">
+                                <a
+                                  href={explorer.url + c.token}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-mono text-blue-400 hover:text-blue-300 hover:underline"
+                                >
+                                  {c.token.slice(0, 6)}...{c.token.slice(-4)}
+                                </a>
+                              </td>
+                              <td className="px-3 py-1.5 text-right font-mono">{formatNumber(c.totalSupply)}</td>
+                              <td className="px-3 py-1.5 text-right font-mono text-amber-400">{formatNumber(c.systemHeld)}</td>
+                              <td className="px-3 py-1.5 text-right font-mono text-emerald-400">{formatNumber(c.circulating)}</td>
+                            </tr>
+                          );
+                        })}
+                      {selectedXStock.chains
+                        .filter((c) => c.totalSupply === null)
+                        .map((c, i) => (
+                          <tr key={`err-${i}`} className="border-b border-border last:border-0">
+                            <td className="px-3 py-1.5 text-muted-foreground">{c.chain}</td>
+                            <td className="px-3 py-1.5 font-mono text-muted-foreground">{c.token.slice(0, 6)}...{c.token.slice(-4)}</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* System Wallets */}
+              {selectedXStock.systemWallets.length > 0 && (
+                <div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">System Wallets (Locked)</div>
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-secondary/50 border-b border-border">
+                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">Chain</th>
+                          <th className="text-left px-3 py-2 text-muted-foreground font-medium">Wallet</th>
+                          <th className="text-right px-3 py-2 text-muted-foreground font-medium">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedXStock.systemWallets
+                          .sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0))
+                          .map((sw, i) => (
+                            <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                              <td className="px-3 py-1.5 text-foreground">{sw.chain}</td>
+                              <td className="px-3 py-1.5 font-mono text-muted-foreground">
+                                {sw.address.slice(0, 8)}...{sw.address.slice(-6)}
+                              </td>
+                              <td className="px-3 py-1.5 text-right font-mono text-amber-400">{formatNumber(sw.balance)}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Timestamp */}
+              <div className="text-[10px] text-muted-foreground text-right">
+                Last checked: {new Date(selectedXStock.timestamp).toLocaleString()}
               </div>
             </div>
           )}

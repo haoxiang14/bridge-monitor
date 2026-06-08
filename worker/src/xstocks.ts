@@ -150,12 +150,14 @@ async function solanaTotalSupply(rpc: string, mint: string): Promise<bigint | nu
       method: "POST",
       headers: FETCH_HEADERS,
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenSupply", params: [mint] }),
-    });
+    }, 15000);
     const json: any = await res.json();
     if (json.result?.value?.amount) {
       return BigInt(json.result.value.amount);
     }
-  } catch (e) { console.error(`[XSTOCKS SOLANA ERROR]`, e); }
+  } catch (e: any) {
+    if (e?.name !== "AbortError") console.error(`[XSTOCKS SOLANA ERROR]`, e?.message ?? e);
+  }
   return null;
 }
 
@@ -168,7 +170,7 @@ async function solanaBalanceOf(rpc: string, mint: string, wallet: string): Promi
         jsonrpc: "2.0", id: 1, method: "getTokenAccountsByOwner",
         params: [wallet, { mint }, { encoding: "jsonParsed" }],
       }),
-    });
+    }, 20000);
     const json: any = await res.json();
     const accounts = json.result?.value ?? [];
     let total = BigInt(0);
@@ -177,7 +179,9 @@ async function solanaBalanceOf(rpc: string, mint: string, wallet: string): Promi
       if (amount) total += BigInt(amount);
     }
     return total;
-  } catch (e) { console.error(`[XSTOCKS SOLANA BALANCE ERROR]`, e); }
+  } catch (e: any) {
+    if (e?.name !== "AbortError") console.error(`[XSTOCKS SOLANA BALANCE ERROR] ${wallet.slice(0, 8)}:`, e?.message ?? e);
+  }
   return BigInt(0);
 }
 
@@ -339,8 +343,11 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
   const evmChains = CHAINS.filter(c => c.type !== "tron");
   const tronChains = CHAINS.filter(c => c.type === "tron");
 
+  const evmChainsNonSolana = evmChains.filter(c => c.type !== "solana");
+  const solanaChains = evmChains.filter(c => c.type === "solana");
+
   const evmResults = await Promise.all(
-    evmChains.map(async (chain) => {
+    evmChainsNonSolana.map(async (chain) => {
       const tokenAddr = getTokenAddress(token, chain);
       const supply = await getTotalSupply(chain, tokenAddr);
       if (supply === null) return { chain, supply: null, systemHeld: null };
@@ -352,6 +359,23 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
       return { chain, supply, systemHeld: totalSystemHeld };
     })
   );
+
+  // Solana: sequential wallet queries to avoid rate limiting on public RPCs
+  const solanaResults = [];
+  for (const chain of solanaChains) {
+    const tokenAddr = getTokenAddress(token, chain);
+    const supply = await getTotalSupply(chain, tokenAddr);
+    if (supply === null) {
+      solanaResults.push({ chain, supply: null, systemHeld: null });
+      continue;
+    }
+    const chainWallets = getSystemWallets(chain, wallets);
+    let totalSystemHeld = BigInt(0);
+    for (const wallet of chainWallets) {
+      totalSystemHeld += await getWalletBalance(chain, tokenAddr, wallet);
+    }
+    solanaResults.push({ chain, supply, systemHeld: totalSystemHeld });
+  }
 
   const tronResults = [];
   for (const chain of tronChains) {
@@ -369,7 +393,7 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     tronResults.push({ chain, supply, systemHeld: totalSystemHeld });
   }
 
-  for (const result of [...evmResults, ...tronResults]) {
+  for (const result of [...evmResults, ...solanaResults, ...tronResults]) {
     if (result.supply !== null) {
       const decimals = result.chain.decimals;
       const divisor = 10 ** decimals;

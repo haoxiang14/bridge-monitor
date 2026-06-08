@@ -75,9 +75,7 @@ async function ethCall(rpcUrl: string, to: string, data: string): Promise<bigint
     if (json.result && json.result !== "0x" && json.result !== "0x0") {
       return BigInt(json.result);
     }
-  } catch (e) {
-    console.error(`[CCTP RPC ERROR] ${rpcUrl}:`, e);
-  }
+  } catch {}
   return null;
 }
 

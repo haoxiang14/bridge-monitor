@@ -1,4 +1,4 @@
-import { RPC, RPC_LIST, BridgeConfig, L2Target } from "./bridges";
+import { RPC, RPC_LIST, BridgeConfig, L2Target } from "./bridges.js";
 
 async function ethCallSingle(rpcUrl: string, to: string, data: string): Promise<bigint | null> {
   try {
@@ -75,22 +75,26 @@ async function getSolanaTokenSupply(rpcUrl: string, mintAddress: string): Promis
 }
 
 async function getTonJettonSupply(apiBase: string, masterAddress: string, decimals: number): Promise<number | null> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(
-      `${apiBase}/jetton/masters?address=${encodeURIComponent(masterAddress)}&limit=1`,
-      { signal: controller.signal }
-    );
-    clearTimeout(timeout);
-    const json: any = await res.json();
-    const master = json?.jetton_masters?.[0] ?? json;
-    const totalSupply = master?.total_supply ?? master?.jetton_content?.total_supply;
-    if (totalSupply) {
-      return Number(BigInt(String(totalSupply))) / (10 ** decimals);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(
+        `${apiBase}/jetton/masters?address=${encodeURIComponent(masterAddress)}&limit=1`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeout);
+      if (res.status === 429) continue;
+      const json: any = await res.json();
+      const master = json?.jetton_masters?.[0] ?? json;
+      const totalSupply = master?.total_supply ?? master?.jetton_content?.total_supply;
+      if (totalSupply) {
+        return Number(BigInt(String(totalSupply))) / (10 ** decimals);
+      }
+    } catch (e) {
+      console.error(`[TON RPC ERROR] ${apiBase}:`, e);
     }
-  } catch (e) {
-    console.error(`[TON RPC ERROR] ${apiBase}:`, e);
   }
   return null;
 }
@@ -238,12 +242,6 @@ export async function checkBridge(config: BridgeConfig): Promise<ReconcileResult
   }
 
   return result;
-}
-
-async function batch<T>(items: T[], fn: (item: T) => Promise<unknown>, size: number): Promise<void> {
-  for (let i = 0; i < items.length; i += size) {
-    await Promise.all(items.slice(i, i + size).map(fn));
-  }
 }
 
 export async function checkAllBridges(bridges: BridgeConfig[]): Promise<ReconcileResult[]> {

@@ -1,4 +1,4 @@
-import { RPC } from "./bridges";
+import { RPC } from "./bridges.js";
 
 type ChainType = "evm" | "solana" | "sui" | "algorand" | "near" | "noble" | "aptos" | "xrpl" | "stellar" | "starknet";
 
@@ -24,7 +24,6 @@ export const NATIVE_TOKENS: NativeTokenConfig[] = [
     symbol: "USDC",
     url: "https://www.circle.com/usdc",
     chains: [
-      // === CCTP V2 EVM Chains (mainnet) ===
       { chain: "Ethereum", rpc: "https://ethereum-rpc.publicnode.com", token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 6 },
       { chain: "Arbitrum", rpc: "https://arb1.arbitrum.io/rpc", token: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", decimals: 6 },
       { chain: "Base", rpc: "https://base-rpc.publicnode.com", token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6 },
@@ -45,10 +44,8 @@ export const NATIVE_TOKENS: NativeTokenConfig[] = [
       { chain: "EDGE", rpc: "https://edge-mainnet.g.alchemy.com/public", token: "0x98d2919b9A214E6Fa5384AC81E6864bA686Ad74c", decimals: 6 },
       { chain: "Pharos", rpc: "https://rpc.pharos.xyz", token: "0xC879C018dB60520F4355C26eD1a6D572cdAC1815", decimals: 6 },
       { chain: "Plume", rpc: "https://plume.drpc.org", fallbackRpcs: ["https://rpc.plume.org"], token: "0x222365EF19F7947e5484218551B56bb3965Aa7aF", decimals: 6 },
-      // === CCTP V2 Non-EVM ===
       { chain: "Solana", rpc: "https://solana.drpc.org", fallbackRpcs: ["https://solana-rpc.publicnode.com", "https://api.mainnet-beta.solana.com"], token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6, type: "solana" },
       { chain: "Starknet", rpc: "https://starknet.drpc.org", fallbackRpcs: ["https://starknet-rpc.publicnode.com"], token: "0x033068F6539f8e6e6b131e6B2B814e6c34A5224bC66947c47DaB9dFeE93b35fb", decimals: 6, type: "starknet" },
-      // === CCTP V1 Legacy ===
       { chain: "Sui", rpc: "https://sui.drpc.org", fallbackRpcs: ["https://sui-rpc.publicnode.com"], token: "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC", decimals: 6, type: "sui" },
       { chain: "Aptos", rpc: "https://aptos.drpc.org/v1", fallbackRpcs: ["https://fullnode.mainnet.aptoslabs.com/v1"], token: "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b", decimals: 6, type: "aptos" },
       { chain: "Noble", rpc: "https://noble-api.polkachu.com", fallbackRpcs: ["https://noble-rpc.polkachu.com"], token: "uusdc", decimals: 6, type: "noble" },
@@ -61,7 +58,7 @@ const ALERT_THRESHOLD_PCT = 30;
 
 const FETCH_HEADERS: Record<string, string> = { "Content-Type": "application/json", "User-Agent": "bridge-monitor/1.0" };
 
-function fetchWithTimeout(url: string, opts: RequestInit, ms = 8000): Promise<Response> {
+function fetchWithTimeout(url: string, opts?: RequestInit, ms = 8000): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ms);
   return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timeout));
@@ -106,28 +103,11 @@ async function getSuiSupply(rpcUrl: string, coinType: string): Promise<number | 
       headers: FETCH_HEADERS,
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "suix_getTotalSupply", params: [coinType] }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.result?.value) {
       return Number(BigInt(json.result.value)) / 1e6;
     }
   } catch (e) { console.error(`[SUI ERROR]`, e); }
-  return null;
-}
-
-async function getAlgorandSupply(rpcUrl: string, assetId: string): Promise<number | null> {
-  try {
-    // Get creator address from asset info
-    const assetRes = await fetchWithTimeout(`${rpcUrl}/v2/assets/${assetId}`, {});
-    const assetData = await assetRes.json();
-    const creator = assetData?.asset?.params?.creator;
-    const total = BigInt(assetData?.asset?.params?.total ?? 0);
-    if (!creator) return null;
-    // Get creator's balance (reserve)
-    const balRes = await fetchWithTimeout(`${rpcUrl}/v2/accounts/${creator}/assets?asset-id=${assetId}`, {});
-    const balData = await balRes.json();
-    const reserve = BigInt(balData?.assets?.[0]?.amount ?? 0);
-    return Number(total - reserve) / 1e6;
-  } catch (e) { console.error(`[ALGORAND ERROR]`, e); }
   return null;
 }
 
@@ -136,7 +116,7 @@ async function getAptosSupply(rpcUrl: string, moduleAddr: string): Promise<numbe
     const res = await fetchWithTimeout(
       `${rpcUrl}/accounts/${moduleAddr}/resource/0x1::fungible_asset::ConcurrentSupply`,
     );
-    const json = await res.json();
+    const json: any = await res.json();
     const value = json?.data?.current?.value;
     if (value) return Number(BigInt(value)) / 1e6;
   } catch (e) { console.error(`[APTOS ERROR]`, e); }
@@ -146,66 +126,11 @@ async function getAptosSupply(rpcUrl: string, moduleAddr: string): Promise<numbe
 async function getNobleSupply(rpcUrl: string, denom: string): Promise<number | null> {
   try {
     const res = await fetchWithTimeout(`${rpcUrl}/cosmos/bank/v1beta1/supply/by_denom?denom=${denom}`, {});
-    const json = await res.json();
+    const json: any = await res.json();
     if (json?.amount?.amount) {
       return Number(BigInt(json.amount.amount)) / 1e6;
     }
   } catch (e) { console.error(`[NOBLE ERROR]`, e); }
-  return null;
-}
-
-async function getNearSupply(rpcUrl: string, accountId: string): Promise<number | null> {
-  try {
-    const res = await fetchWithTimeout(rpcUrl, {
-      method: "POST",
-      headers: FETCH_HEADERS,
-      body: JSON.stringify({
-        jsonrpc: "2.0", id: 1, method: "query",
-        params: { request_type: "call_function", finality: "final", account_id: accountId, method_name: "ft_total_supply", args_base64: "e30=" },
-      }),
-    });
-    const json = await res.json();
-    if (json.result?.result) {
-      const raw = new TextDecoder().decode(new Uint8Array(json.result.result));
-      return Number(BigInt(JSON.parse(raw))) / 1e6;
-    }
-  } catch (e) { console.error(`[NEAR ERROR]`, e); }
-  return null;
-}
-
-async function getXrplSupply(rpcUrl: string, issuer: string): Promise<number | null> {
-  try {
-    const res = await fetchWithTimeout(rpcUrl, {
-      method: "POST",
-      headers: FETCH_HEADERS,
-      body: JSON.stringify({ method: "gateway_balances", params: [{ account: issuer, hotwallet: [], ledger_index: "validated" }] }),
-    });
-    const json = await res.json();
-    const obligations = json?.result?.obligations;
-    if (obligations) {
-      // Find USDC obligation (may be hex-encoded key or "USD")
-      for (const [, value] of Object.entries(obligations)) {
-        return Number(value as string);
-      }
-    }
-  } catch (e) { console.error(`[XRPL ERROR]`, e); }
-  return null;
-}
-
-async function getStellarSupply(rpcUrl: string, issuer: string): Promise<number | null> {
-  try {
-    const res = await fetchWithTimeout(
-      `${rpcUrl}/assets?asset_code=USDC&asset_issuer=${issuer}&limit=1`,
-    );
-    const json = await res.json();
-    const record = json?._embedded?.records?.[0];
-    if (record) {
-      const amount = Number(record.amount ?? 0);
-      const claimable = Number(record.claimable_balances_amount ?? 0);
-      const pools = Number(record.liquidity_pools_amount ?? 0);
-      return amount + claimable + pools;
-    }
-  } catch (e) { console.error(`[STELLAR ERROR]`, e); }
   return null;
 }
 
@@ -219,7 +144,7 @@ async function getStarknetSupply(rpcUrl: string, contract: string): Promise<numb
         params: [{ contract_address: contract, entry_point_selector: "0x1557182e4359a1f0c6301278e8f5b35a776ab58d39892581e357578fb287836", calldata: [] }, "latest"],
       }),
     });
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.result) {
       const low = BigInt(json.result[0]);
       const high = json.result[1] ? BigInt(json.result[1]) : BigInt(0);
@@ -236,18 +161,10 @@ async function getChainSupplySingle(rpc: string, chain: NativeTokenChain): Promi
       return getSolanaSupply(rpc, chain.token);
     case "sui":
       return getSuiSupply(rpc, chain.token);
-    case "algorand":
-      return getAlgorandSupply(rpc, chain.token);
     case "aptos":
       return getAptosSupply(rpc, chain.token);
     case "noble":
       return getNobleSupply(rpc, chain.token);
-    case "near":
-      return getNearSupply(rpc, chain.token);
-    case "xrpl":
-      return getXrplSupply(rpc, chain.token);
-    case "stellar":
-      return getStellarSupply(rpc, chain.token);
     case "starknet":
       return getStarknetSupply(rpc, chain.token);
     default: {
@@ -274,10 +191,6 @@ export interface ChainSupply {
   chain: string;
   token: string;
   supply: number | null;
-  prevSupply: number | null;
-  change: number | null;
-  changePct: number | null;
-  alert: boolean;
 }
 
 export interface NativeTokenResult {
@@ -288,14 +201,9 @@ export interface NativeTokenResult {
   chainCount: number;
   successCount: number;
   chains: ChainSupply[];
-  change: number | null;
-  changePct: number | null;
-  status: "OK" | "ALERT" | "MONITORING";
-  alertChains: string[];
+  status: "OK" | "ALERT" | "ERROR";
   timestamp: string;
 }
-
-let previousChainSupplies: Record<string, Record<string, number>> = {};
 
 export async function checkNativeTokens(): Promise<NativeTokenResult[]> {
   const results: NativeTokenResult[] = [];
@@ -307,21 +215,7 @@ export async function checkNativeTokens(): Promise<NativeTokenResult[]> {
       const chunkResults = await Promise.all(
         chunk.map(async (c): Promise<ChainSupply> => {
           const supply = await getChainSupply(c);
-          const prev = previousChainSupplies[config.symbol]?.[c.chain] ?? null;
-
-          let change: number | null = null;
-          let changePct: number | null = null;
-          let alert = false;
-
-          if (supply !== null && prev !== null) {
-            change = supply - prev;
-            changePct = prev > 0 ? (change / prev) * 100 : 0;
-            if (Math.abs(changePct) > ALERT_THRESHOLD_PCT) {
-              alert = true;
-            }
-          }
-
-          return { chain: c.chain, token: c.token, supply, prevSupply: prev, change, changePct, alert };
+          return { chain: c.chain, token: c.token, supply };
         })
       );
       supplies.push(...chunkResults);
@@ -329,22 +223,6 @@ export async function checkNativeTokens(): Promise<NativeTokenResult[]> {
 
     const successChains = supplies.filter((s) => s.supply !== null);
     const totalSupply = successChains.reduce((sum, s) => sum + (s.supply ?? 0), 0);
-
-    const prevTotal = Object.values(previousChainSupplies[config.symbol] ?? {}).reduce((a, b) => a + b, 0);
-    const totalChange = prevTotal > 0 ? totalSupply - prevTotal : null;
-    const totalChangePct = prevTotal > 0 ? (totalChange! / prevTotal) * 100 : null;
-
-    if (successChains.length > 0) {
-      if (!previousChainSupplies[config.symbol]) {
-        previousChainSupplies[config.symbol] = {};
-      }
-      for (const s of successChains) {
-        previousChainSupplies[config.symbol][s.chain] = s.supply!;
-      }
-    }
-
-    const alertChains = supplies.filter((s) => s.alert).map((s) => s.chain);
-    const status = alertChains.length > 0 ? "ALERT" : prevTotal > 0 ? "OK" : "MONITORING";
 
     results.push({
       name: config.name,
@@ -354,10 +232,7 @@ export async function checkNativeTokens(): Promise<NativeTokenResult[]> {
       chainCount: config.chains.length,
       successCount: successChains.length,
       chains: supplies,
-      change: totalChange,
-      changePct: totalChangePct,
-      status,
-      alertChains,
+      status: successChains.length > 0 ? "OK" : "ERROR",
       timestamp: new Date().toISOString(),
     });
   }

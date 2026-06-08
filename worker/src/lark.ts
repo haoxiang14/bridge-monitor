@@ -1,4 +1,5 @@
-import { ReconcileResult } from "./rpc";
+import { ReconcileResult } from "./rpc.js";
+import { XStocksResult } from "./xstocks.js";
 
 const L1_EXPLORERS: Record<string, { name: string; url: string }> = {
   "0x95fC37A27a2f68e3A647CDc081F0A89bb47c3012": { name: "Etherscan", url: "https://etherscan.io/address/" },
@@ -95,11 +96,67 @@ export async function sendLarkAlert(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ msg_type: "interactive", card }),
     });
-
-    const json = await res.json();
+    const json: any = await res.json();
     return json.code === 0;
   } catch (e) {
-    console.error("[LARK] Error sending alert:", e);
+    console.error("[LARK] Error sending bridge alert:", e);
+    return false;
+  }
+}
+
+export async function sendXStocksLarkAlert(
+  webhookUrl: string,
+  result: XStocksResult
+): Promise<boolean> {
+  const reserve = result.circulating! > 0
+    ? ((result.sharesHeld! / result.circulating!) * 100).toFixed(2)
+    : "N/A";
+
+  const card = {
+    header: {
+      template: "orange",
+      title: { tag: "plain_text", content: "⚠️ xStocks Under-Reserved Alert" },
+    },
+    elements: [
+      {
+        tag: "div",
+        fields: [
+          { is_short: true, text: { tag: "lark_md", content: `**Token**\n${result.symbol}` } },
+          { is_short: true, text: { tag: "lark_md", content: `**Underlying**\n${result.underlying}` } },
+        ],
+      },
+      {
+        tag: "div",
+        fields: [
+          { is_short: true, text: { tag: "lark_md", content: `**Shares Held**\n${fmt(result.sharesHeld)}` } },
+          { is_short: true, text: { tag: "lark_md", content: `**Circulating (On-chain)**\n${fmt(result.circulating)}` } },
+        ],
+      },
+      {
+        tag: "div",
+        fields: [
+          { is_short: true, text: { tag: "lark_md", content: `**Reserve Ratio**\n${reserve}%` } },
+          { is_short: true, text: { tag: "lark_md", content: `**Chains Queried**\n${result.successCount}/${result.chainCount}` } },
+        ],
+      },
+      { tag: "hr" },
+      {
+        tag: "note",
+        elements: [{ tag: "plain_text", content: result.timestamp }],
+      },
+    ],
+  };
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ msg_type: "interactive", card }),
+    });
+    const json: any = await res.json();
+    return json.code === 0;
+  } catch (e) {
+    console.error("[LARK] Error sending xStocks alert:", e);
     return false;
   }
 }

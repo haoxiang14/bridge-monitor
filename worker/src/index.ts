@@ -1,59 +1,53 @@
-import { BRIDGES } from "./bridges";
-import { checkAllBridges } from "./rpc";
-import { checkNativeTokens } from "./cctp";
-import { sendLarkAlert } from "./lark";
+import { BRIDGES } from "./bridges.js";
+import { checkAllBridges } from "./rpc.js";
+import { checkNativeTokens } from "./cctp.js";
+import { checkXStocks } from "./xstocks.js";
+import { sendLarkAlert, sendXStocksLarkAlert } from "./lark.js";
 
-export interface Env {
-  LARK_WEBHOOK_URL?: string;
-}
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-async function handleReconcile(env: Env): Promise<Response> {
-  const results = await checkAllBridges(BRIDGES);
-  const nativeTokens = await checkNativeTokens();
-
-  if (env.LARK_WEBHOOK_URL) {
-    const alerts = results.filter((r) => r.status === "ALERT");
-    for (const alert of alerts) {
-      await sendLarkAlert(env.LARK_WEBHOOK_URL, alert);
-    }
+async function main() {
+  const larkUrl = process.env.LARK_WEBHOOK_URL;
+  if (!larkUrl) {
+    console.error("[WORKER] LARK_WEBHOOK_URL not set, exiting.");
+    process.exit(1);
   }
 
-  return new Response(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      larkEnabled: !!env.LARK_WEBHOOK_URL,
-      results,
-      nativeTokens,
-    }),
-    {
-      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-    }
-  );
+  console.log(`[WORKER] Starting bridge monitor check at ${new Date().toISOString()}`);
+
+  const [bridgeResults, nativeTokens, xstocks] = await Promise.all([
+    checkAllBridges(BRIDGES),
+    checkNativeTokens(),
+    checkXStocks(),
+  ]);
+
+  // Bridge insolvency alerts
+  const bridgeAlerts = bridgeResults.filter((r) => r.status === "ALERT");
+  for (const alert of bridgeAlerts) {
+    console.log(`[ALERT] Bridge insolvency: ${alert.bridge} ${alert.token} delta=${alert.delta}`);
+    await sendLarkAlert(larkUrl, alert);
+  }
+
+  // xStocks reserve alerts (reserve < 100%)
+  const xstocksAlerts = xstocks.filter((xs) => {
+    if (xs.status === "ERROR" || xs.circulating === null || xs.sharesHeld === null) return false;
+    if (xs.circulating <= 0) return false;
+    const reserve = (xs.sharesHeld / xs.circulating) * 100;
+    return reserve < 100;
+  });
+  for (const alert of xstocksAlerts) {
+    const reserve = ((alert.sharesHeld! / alert.circulating!) * 100).toFixed(2);
+    console.log(`[ALERT] xStocks under-reserved: ${alert.symbol} reserve=${reserve}%`);
+    await sendXStocksLarkAlert(larkUrl, alert);
+  }
+
+  const totalAlerts = bridgeAlerts.length + xstocksAlerts.length;
+  console.log(`[WORKER] Done. Bridges: ${bridgeResults.length} checked, ${bridgeAlerts.length} alerts. xStocks: ${xstocks.length} checked, ${xstocksAlerts.length} alerts.`);
+
+  if (totalAlerts > 0) {
+    console.log(`[WORKER] ${totalAlerts} alert(s) sent to Lark.`);
+  }
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: CORS_HEADERS });
-    }
-    return handleReconcile(env);
-  },
-
-  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
-    const results = await checkAllBridges(BRIDGES);
-    await checkNativeTokens();
-
-    if (env.LARK_WEBHOOK_URL) {
-      const alerts = results.filter((r) => r.status === "ALERT");
-      for (const alert of alerts) {
-        await sendLarkAlert(env.LARK_WEBHOOK_URL, alert);
-      }
-    }
-  },
-};
+main().catch((e) => {
+  console.error("[WORKER] Fatal error:", e);
+  process.exit(1);
+});

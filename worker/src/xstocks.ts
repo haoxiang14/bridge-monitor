@@ -421,8 +421,11 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
 export async function checkXStocks(): Promise<XStocksResult[]> {
   const wallets = await fetchSystemWallets();
   const results: XStocksResult[] = [];
-  for (const token of TOKENS) {
-    results.push(await checkSingleToken(token, wallets));
+  // Process in batches of 3 to balance speed vs rate limits
+  for (let i = 0; i < TOKENS.length; i += 3) {
+    const batch = TOKENS.slice(i, i + 3);
+    const batchResults = await Promise.all(batch.map(token => checkSingleToken(token, wallets)));
+    results.push(...batchResults);
   }
   return results;
 }

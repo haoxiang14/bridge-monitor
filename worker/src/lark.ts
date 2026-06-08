@@ -97,6 +97,7 @@ export async function sendLarkAlert(
       body: JSON.stringify({ msg_type: "interactive", card }),
     });
     const json: any = await res.json();
+    console.log(`[LARK] Bridge alert for ${result.bridge} ${result.token}: status=${res.status} code=${json.code} msg=${json.msg ?? json.StatusMessage}`);
     return json.code === 0;
   } catch (e) {
     console.error("[LARK] Error sending bridge alert:", e);
@@ -154,6 +155,7 @@ export async function sendXStocksLarkAlert(
       body: JSON.stringify({ msg_type: "interactive", card }),
     });
     const json: any = await res.json();
+    console.log(`[LARK] xStocks alert for ${result.symbol}: status=${res.status} code=${json.code} msg=${json.msg ?? json.StatusMessage}`);
     return json.code === 0;
   } catch (e) {
     console.error("[LARK] Error sending xStocks alert:", e);

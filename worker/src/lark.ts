@@ -1,5 +1,5 @@
-import { ReconcileResult } from "./rpc.js";
-import { XStocksResult } from "./xstocks.js";
+import { ReconcileResult } from "./rpc";
+import { XStocksResult } from "./xstocks";
 
 const L1_EXPLORERS: Record<string, { name: string; url: string }> = {
   "0x95fC37A27a2f68e3A647CDc081F0A89bb47c3012": { name: "Etherscan", url: "https://etherscan.io/address/" },

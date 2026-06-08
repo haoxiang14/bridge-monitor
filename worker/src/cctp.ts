@@ -1,4 +1,4 @@
-import { RPC } from "./bridges.js";
+import { RPC } from "./bridges";
 
 type ChainType = "evm" | "solana" | "sui" | "algorand" | "near" | "noble" | "aptos" | "xrpl" | "stellar" | "starknet";
 

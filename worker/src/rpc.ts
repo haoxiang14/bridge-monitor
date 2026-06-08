@@ -1,4 +1,4 @@
-import { RPC, RPC_LIST, BridgeConfig, L2Target } from "./bridges.js";
+import { RPC, RPC_LIST, BridgeConfig, L2Target } from "./bridges";
 
 async function ethCallSingle(rpcUrl: string, to: string, data: string): Promise<bigint | null> {
   try {

@@ -2,12 +2,13 @@
   "name": "bridge-monitor-worker",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "start": "tsx src/index.ts"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
   },
-  "dependencies": {
-    "tsx": "^4.19.0",
-    "typescript": "^5"
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260511.1",
+    "typescript": "^5",
+    "wrangler": "^4"
   }
 }

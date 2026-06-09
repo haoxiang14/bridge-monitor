@@ -44,7 +44,7 @@ export const NATIVE_TOKENS: NativeTokenConfig[] = [
       { chain: "EDGE", rpc: "https://edge-mainnet.g.alchemy.com/public", token: "0x98d2919b9A214E6Fa5384AC81E6864bA686Ad74c", decimals: 6 },
       { chain: "Pharos", rpc: "https://rpc.pharos.xyz", token: "0xC879C018dB60520F4355C26eD1a6D572cdAC1815", decimals: 6 },
       { chain: "Plume", rpc: "https://plume.drpc.org", fallbackRpcs: ["https://rpc.plume.org"], token: "0x222365EF19F7947e5484218551B56bb3965Aa7aF", decimals: 6 },
-      { chain: "Solana", rpc: "https://solana.drpc.org", fallbackRpcs: ["https://solana-rpc.publicnode.com", "https://api.mainnet-beta.solana.com"], token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6, type: "solana" },
+      { chain: "Solana", rpc: process.env.HELIUS_API_KEY ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}` : "https://solana.drpc.org", fallbackRpcs: ["https://solana-rpc.publicnode.com", "https://api.mainnet-beta.solana.com"], token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6, type: "solana" },
       { chain: "Starknet", rpc: "https://starknet.drpc.org", fallbackRpcs: ["https://starknet-rpc.publicnode.com"], token: "0x033068F6539f8e6e6b131e6B2B814e6c34A5224bC66947c47DaB9dFeE93b35fb", decimals: 6, type: "starknet" },
       { chain: "Sui", rpc: "https://sui.drpc.org", fallbackRpcs: ["https://sui-rpc.publicnode.com"], token: "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC", decimals: 6, type: "sui" },
       { chain: "Aptos", rpc: "https://aptos.drpc.org/v1", fallbackRpcs: ["https://fullnode.mainnet.aptoslabs.com/v1"], token: "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b", decimals: 6, type: "aptos" },

@@ -24,4 +24,5 @@ jobs:
         working-directory: worker
         env:
           LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+          HELIUS_API_KEY: ${{ secrets.HELIUS_API_KEY }}
         run: npm start

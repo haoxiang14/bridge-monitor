@@ -145,43 +145,50 @@ async function evmBalanceOf(rpc: string, token: string, wallet: string): Promise
 }
 
 async function solanaTotalSupply(rpc: string, mint: string): Promise<bigint | null> {
-  try {
-    const res = await fetchWithTimeout(rpc, {
-      method: "POST",
-      headers: FETCH_HEADERS,
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenSupply", params: [mint] }),
-    }, 15000);
-    const json: any = await res.json();
-    if (json.result?.value?.amount) {
-      return BigInt(json.result.value.amount);
-    }
-  } catch (e: any) {
-    if (e?.name !== "AbortError") console.error(`[XSTOCKS SOLANA ERROR]`, e?.message ?? e);
+  const rpcs = [rpc, "https://api.mainnet-beta.solana.com"];
+  for (const rpcUrl of rpcs) {
+    try {
+      const res = await fetchWithTimeout(rpcUrl, {
+        method: "POST",
+        headers: FETCH_HEADERS,
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenSupply", params: [mint] }),
+      }, 15000);
+      const json: any = await res.json();
+      if (json.result?.value?.amount) {
+        return BigInt(json.result.value.amount);
+      }
+    } catch {}
   }
   return null;
 }
 
-async function solanaBalanceOf(rpc: string, mint: string, wallet: string): Promise<bigint | null> {
-  try {
-    const res = await fetchWithTimeout(rpc, {
-      method: "POST",
-      headers: FETCH_HEADERS,
-      body: JSON.stringify({
-        jsonrpc: "2.0", id: 1, method: "getTokenAccountsByOwner",
-        params: [wallet, { mint }, { encoding: "jsonParsed" }],
-      }),
-    }, 20000);
-    const json: any = await res.json();
-    const accounts = json.result?.value ?? [];
-    let total = BigInt(0);
-    for (const acc of accounts) {
-      const amount = acc.account?.data?.parsed?.info?.tokenAmount?.amount;
-      if (amount) total += BigInt(amount);
+async function solanaBalanceOf(rpc: string, mint: string, wallet: string): Promise<bigint> {
+  const rpcs = [rpc, "https://api.mainnet-beta.solana.com"];
+  for (const rpcUrl of rpcs) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
+        const res = await fetchWithTimeout(rpcUrl, {
+          method: "POST",
+          headers: FETCH_HEADERS,
+          body: JSON.stringify({
+            jsonrpc: "2.0", id: 1, method: "getTokenAccountsByOwner",
+            params: [wallet, { mint }, { encoding: "jsonParsed" }],
+          }),
+        }, 30000);
+        const json: any = await res.json();
+        if (json.error) continue;
+        const accounts = json.result?.value ?? [];
+        let total = BigInt(0);
+        for (const acc of accounts) {
+          const amount = acc.account?.data?.parsed?.info?.tokenAmount?.amount;
+          if (amount) total += BigInt(amount);
+        }
+        return total;
+      } catch {}
     }
-    return total;
-  } catch (e: any) {
-    if (e?.name !== "AbortError") console.error(`[XSTOCKS SOLANA BALANCE ERROR] ${wallet.slice(0, 8)}:`, e?.message ?? e);
   }
+  console.error(`[XSTOCKS SOLANA BALANCE FAILED] ${wallet.slice(0, 8)} after all retries`);
   return BigInt(0);
 }
 
@@ -421,9 +428,9 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
 export async function checkXStocks(): Promise<XStocksResult[]> {
   const wallets = await fetchSystemWallets();
   const results: XStocksResult[] = [];
-  // Process in batches of 3 to balance speed vs rate limits
-  for (let i = 0; i < TOKENS.length; i += 3) {
-    const batch = TOKENS.slice(i, i + 3);
+  // Process in batches of 2 to avoid overwhelming Solana/Tron RPCs
+  for (let i = 0; i < TOKENS.length; i += 2) {
+    const batch = TOKENS.slice(i, i + 2);
     const batchResults = await Promise.all(batch.map(token => checkSingleToken(token, wallets)));
     results.push(...batchResults);
   }

@@ -227,12 +227,16 @@ function tronAddressToHex(base58: string): string {
 }
 
 async function tronCall(rpc: string, contractBase58: string, selector: string, parameter: string): Promise<bigint | null> {
+  const headers: Record<string, string> = { ...FETCH_HEADERS };
+  if (process.env.TRONGRID_API_KEY) {
+    headers["TRON-PRO-API-KEY"] = process.env.TRONGRID_API_KEY;
+  }
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       if (attempt > 0) await new Promise(r => setTimeout(r, 1500 * attempt));
       const res = await fetchWithTimeout(`${rpc}/wallet/triggerconstantcontract`, {
         method: "POST",
-        headers: FETCH_HEADERS,
+        headers,
         body: JSON.stringify({
           owner_address: "410000000000000000000000000000000000000000",
           contract_address: tronAddressToHex(contractBase58),

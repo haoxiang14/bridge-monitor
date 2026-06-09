@@ -230,12 +230,16 @@ function tronAddressToHex(base58: string): string {
 }
 
 async function tronCall(rpc: string, contractBase58: string, selector: string, parameter: string): Promise<bigint | null> {
+  const headers: Record<string, string> = { ...FETCH_HEADERS };
+  if (process.env.TRONGRID_API_KEY) {
+    headers["TRON-PRO-API-KEY"] = process.env.TRONGRID_API_KEY;
+  }
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       if (attempt > 0) await new Promise(r => setTimeout(r, 1500 * attempt));
       const res = await fetchWithTimeout(`${rpc}/wallet/triggerconstantcontract`, {
         method: "POST",
-        headers: FETCH_HEADERS,
+        headers,
         body: JSON.stringify({
           owner_address: "410000000000000000000000000000000000000000",
           contract_address: tronAddressToHex(contractBase58),
@@ -391,7 +395,6 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
   const tronResults = [];
   for (const chain of tronChains) {
     const tokenAddr = getTokenAddress(token, chain);
-    await new Promise(r => setTimeout(r, 500));
     const supply = await getTotalSupply(chain, tokenAddr);
     if (supply === null) {
       tronResults.push({ chain, supply: null, systemHeld: null });
@@ -400,7 +403,6 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     const chainWallets = getSystemWallets(chain, wallets);
     let totalSystemHeld = BigInt(0);
     for (const wallet of chainWallets) {
-      await new Promise(r => setTimeout(r, 300));
       const bal = await getWalletBalance(chain, tokenAddr, wallet);
       if (bal > BigInt(0)) {
         console.log(`[XSTOCKS] ${token.symbol} ${chain.chain} wallet ${wallet.slice(0, 8)}... balance=${Number(bal) / (10 ** chain.decimals)}`);

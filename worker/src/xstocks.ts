@@ -391,6 +391,7 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
   const tronResults = [];
   for (const chain of tronChains) {
     const tokenAddr = getTokenAddress(token, chain);
+    await new Promise(r => setTimeout(r, 500));
     const supply = await getTotalSupply(chain, tokenAddr);
     if (supply === null) {
       tronResults.push({ chain, supply: null, systemHeld: null });
@@ -399,6 +400,7 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     const chainWallets = getSystemWallets(chain, wallets);
     let totalSystemHeld = BigInt(0);
     for (const wallet of chainWallets) {
+      await new Promise(r => setTimeout(r, 300));
       const bal = await getWalletBalance(chain, tokenAddr, wallet);
       if (bal > BigInt(0)) {
         console.log(`[XSTOCKS] ${token.symbol} ${chain.chain} wallet ${wallet.slice(0, 8)}... balance=${Number(bal) / (10 ** chain.decimals)}`);
@@ -439,11 +441,8 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
 export async function checkXStocks(): Promise<XStocksResult[]> {
   const wallets = await fetchSystemWallets();
   const results: XStocksResult[] = [];
-  // Process in batches of 2 to avoid overwhelming Solana/Tron RPCs
-  for (let i = 0; i < TOKENS.length; i += 2) {
-    const batch = TOKENS.slice(i, i + 2);
-    const batchResults = await Promise.all(batch.map(token => checkSingleToken(token, wallets)));
-    results.push(...batchResults);
+  for (const token of TOKENS) {
+    results.push(await checkSingleToken(token, wallets));
   }
   return results;
 }

@@ -65,8 +65,14 @@ export async function sendLarkAlert(
         actions: [
           {
             tag: "button",
-            text: { tag: "plain_text", content: result.bridge },
+            text: { tag: "plain_text", content: "View Dashboard" },
             type: "primary",
+            multi_url: { url: "https://bridge-monitor-theta.vercel.app/" },
+          },
+          {
+            tag: "button",
+            text: { tag: "plain_text", content: result.bridge },
+            type: "default",
             multi_url: { url: result.bridgeUrl },
           },
           {
@@ -74,12 +80,6 @@ export async function sendLarkAlert(
             text: { tag: "plain_text", content: `${l1.name} (${result.token} Locked)` },
             type: "default",
             multi_url: { url: `${l1.url}${result.l1Lock}` },
-          },
-          {
-            tag: "button",
-            text: { tag: "plain_text", content: `${l2.name} (${result.token} Minted)` },
-            type: "default",
-            multi_url: { url: `${l2.url}${result.l2Token}` },
           },
         ],
       },
@@ -141,6 +141,17 @@ export async function sendXStocksLarkAlert(
         ],
       },
       { tag: "hr" },
+      {
+        tag: "action",
+        actions: [
+          {
+            tag: "button",
+            text: { tag: "plain_text", content: "View Dashboard" },
+            type: "primary",
+            multi_url: { url: "https://bridge-monitor-theta.vercel.app/" },
+          },
+        ],
+      },
       {
         tag: "note",
         elements: [{ tag: "plain_text", content: result.timestamp }],

@@ -379,7 +379,11 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     const chainWallets = getSystemWallets(chain, wallets);
     let totalSystemHeld = BigInt(0);
     for (const wallet of chainWallets) {
-      totalSystemHeld += await getWalletBalance(chain, tokenAddr, wallet);
+      const bal = await getWalletBalance(chain, tokenAddr, wallet);
+      if (bal > BigInt(0)) {
+        console.log(`[XSTOCKS] ${token.symbol} ${chain.chain} wallet ${wallet.slice(0, 8)}... balance=${Number(bal) / (10 ** chain.decimals)}`);
+      }
+      totalSystemHeld += bal;
     }
     solanaResults.push({ chain, supply, systemHeld: totalSystemHeld });
   }
@@ -395,7 +399,11 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     const chainWallets = getSystemWallets(chain, wallets);
     let totalSystemHeld = BigInt(0);
     for (const wallet of chainWallets) {
-      totalSystemHeld += await getWalletBalance(chain, tokenAddr, wallet);
+      const bal = await getWalletBalance(chain, tokenAddr, wallet);
+      if (bal > BigInt(0)) {
+        console.log(`[XSTOCKS] ${token.symbol} ${chain.chain} wallet ${wallet.slice(0, 8)}... balance=${Number(bal) / (10 ** chain.decimals)}`);
+      }
+      totalSystemHeld += bal;
     }
     tronResults.push({ chain, supply, systemHeld: totalSystemHeld });
   }
@@ -410,12 +418,15 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     }
   }
 
+  const circulating = successCount > 0 ? totalSupplyAll - systemHeldAll : null;
+  console.log(`[XSTOCKS] ${token.symbol}: totalSupply=${totalSupplyAll.toFixed(2)} systemHeld=${systemHeldAll.toFixed(2)} circulating=${circulating?.toFixed(2)} sharesHeld=${por.sharesHeld}`);
+
   return {
     symbol: token.symbol,
     underlying: token.underlying,
     totalSupply: successCount > 0 ? totalSupplyAll : null,
     systemHeld: successCount > 0 ? systemHeldAll : null,
-    circulating: successCount > 0 ? totalSupplyAll - systemHeldAll : null,
+    circulating,
     sharesHeld: por.sharesHeld,
     porCirculating: por.circulatingSupply,
     chainCount: CHAINS.length,

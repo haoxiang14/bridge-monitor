@@ -43,7 +43,7 @@ const CHAINS: ChainConfig[] = [
   { chain: "BSC", type: "evm", rpc: "https://bsc-dataseed.binance.org", fallbackRpcs: ["https://bsc-rpc.publicnode.com"], decimals: 18 },
   { chain: "Ink", type: "evm", rpc: "https://rpc-gel.inkonchain.com", decimals: 18 },
   { chain: "HyperEVM", type: "evm", rpc: "https://rpc.hyperliquid.xyz/evm", decimals: 18 },
-  { chain: "Solana", type: "solana", rpc: "https://solana-rpc.publicnode.com", fallbackRpcs: ["https://api.mainnet-beta.solana.com"], decimals: 8 },
+  { chain: "Solana", type: "solana", rpc: process.env.HELIUS_API_KEY ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}` : "https://solana-rpc.publicnode.com", fallbackRpcs: ["https://solana-rpc.publicnode.com", "https://api.mainnet-beta.solana.com"], decimals: 8 },
   { chain: "TON", type: "ton", rpc: "https://tonapi.io/v2", decimals: 8 },
   { chain: "Tron", type: "tron", rpc: "https://api.trongrid.io", decimals: 18 },
 ];
@@ -161,24 +161,31 @@ async function solanaTotalSupply(rpc: string, mint: string): Promise<bigint | nu
 }
 
 async function solanaBalanceOf(rpc: string, mint: string, wallet: string): Promise<bigint | null> {
-  try {
-    const res = await fetchWithTimeout(rpc, {
-      method: "POST",
-      headers: FETCH_HEADERS,
-      body: JSON.stringify({
-        jsonrpc: "2.0", id: 1, method: "getTokenAccountsByOwner",
-        params: [wallet, { mint }, { encoding: "jsonParsed" }],
-      }),
-    });
-    const json: any = await res.json();
-    const accounts = json.result?.value ?? [];
-    let total = BigInt(0);
-    for (const acc of accounts) {
-      const amount = acc.account?.data?.parsed?.info?.tokenAmount?.amount;
-      if (amount) total += BigInt(amount);
+  const rpcs = [rpc, "https://solana-rpc.publicnode.com", "https://api.mainnet-beta.solana.com"];
+  for (const rpcUrl of rpcs) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
+        const res = await fetchWithTimeout(rpcUrl, {
+          method: "POST",
+          headers: FETCH_HEADERS,
+          body: JSON.stringify({
+            jsonrpc: "2.0", id: 1, method: "getTokenAccountsByOwner",
+            params: [wallet, { mint }, { encoding: "jsonParsed" }],
+          }),
+        }, 20000);
+        const json: any = await res.json();
+        if (json.error) continue;
+        const accounts = json.result?.value ?? [];
+        let total = BigInt(0);
+        for (const acc of accounts) {
+          const amount = acc.account?.data?.parsed?.info?.tokenAmount?.amount;
+          if (amount) total += BigInt(amount);
+        }
+        return total;
+      } catch {}
     }
-    return total;
-  } catch (e) { console.error(`[XSTOCKS SOLANA BALANCE ERROR]`, e); }
+  }
   return BigInt(0);
 }
 

@@ -97,7 +97,6 @@ interface XStocksResult {
 
 interface ApiResponse {
   timestamp: string;
-  larkEnabled: boolean;
   results: ReconcileResult[];
   nativeTokens: NativeTokenResult[];
   xstocks: XStocksResult[];
@@ -212,7 +211,6 @@ export default function Dashboard() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(POLL_INTERVAL / 1000);
   const [selected, setSelected] = useState<ReconcileResult | null>(null);
   const [selectedNative, setSelectedNative] = useState<NativeTokenResult | null>(null);
   const [selectedXStock, setSelectedXStock] = useState<XStocksResult | null>(null);
@@ -225,7 +223,6 @@ export default function Dashboard() {
       const json: ApiResponse = await res.json();
       setData(json);
       setError(null);
-      setCountdown(POLL_INTERVAL / 1000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -239,21 +236,8 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((c) => (c > 0 ? c - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
-  const okCount = data?.results.filter((r) => r.status === "OK").length ?? 0;
-  const alertCount = (data?.results.filter((r) => r.status === "ALERT").length ?? 0) +
-    (data?.nativeTokens?.filter((nt) => nt.status === "ALERT").length ?? 0);
   const errorCount = data?.results.filter((r) => r.status === "ERROR").length ?? 0;
-  const uniqueBridges = new Set(data?.results.map((r) => r.bridge)).size +
-    (data?.nativeTokens?.length ?? 0);
-  const totalTokens = (data?.results.length ?? 0) +
-    (data?.nativeTokens?.length ?? 0);
 
   return (
     <main className="min-h-screen p-6 md:p-10">
@@ -270,12 +254,6 @@ export default function Dashboard() {
             <span className="text-muted-foreground">
               Updated {data?.timestamp ? new Date(data.timestamp).toLocaleTimeString() : "—"}
             </span>
-            <Badge
-              variant="secondary"
-              className={data?.larkEnabled ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : ""}
-            >
-              Lark {data?.larkEnabled ? "ON" : "OFF"}
-            </Badge>
             <Button
               size="sm"
               variant="secondary"
@@ -289,13 +267,11 @@ export default function Dashboard() {
         </header>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div className="rounded-xl bg-card border border-border p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Status</div>
             <div className="text-xl font-bold">
-              {alertCount > 0 ? (
-                <span className="text-red-400">INSOLVENCY</span>
-              ) : errorCount > 0 ? (
+              {errorCount > 0 ? (
                 <span className="text-amber-400">DEGRADED</span>
               ) : (
                 <span className="text-emerald-400">HEALTHY</span>
@@ -304,21 +280,11 @@ export default function Dashboard() {
           </div>
           <div className="rounded-xl bg-card border border-border p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Bridges</div>
-            <div className="text-xl font-bold">{uniqueBridges}</div>
+            <div className="text-xl font-bold">9</div>
           </div>
           <div className="rounded-xl bg-card border border-border p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Tokens</div>
-            <div className="text-xl font-bold">{totalTokens}</div>
-          </div>
-          <div className="rounded-xl bg-card border border-border p-4">
-            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Alerts</div>
-            <div className="text-xl font-bold text-red-400">{alertCount}</div>
-          </div>
-          <div className="rounded-xl bg-card border border-border p-4">
-            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Next Check</div>
-            <div className="text-xl font-bold font-mono">
-              {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, "0")}
-            </div>
+            <div className="text-xl font-bold">22</div>
           </div>
         </div>
 

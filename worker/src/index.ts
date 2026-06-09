@@ -30,16 +30,19 @@ async function main() {
     if (ok) bridgeAlertCount++;
   }
 
-  // xStocks reserve alerts (reserve < 100%)
+  // xStocks reserve alerts — use PoR API's circulating (authoritative) to avoid
+  // false positives from TON/chain RPC failures inflating on-chain circulating
   const xstocksAlerts = xstocks.filter((xs) => {
-    if (xs.status === "ERROR" || xs.circulating === null || xs.sharesHeld === null) return false;
-    if (xs.circulating <= 0) return false;
-    const reserve = (xs.sharesHeld / xs.circulating) * 100;
+    if (xs.status === "ERROR" || xs.sharesHeld === null) return false;
+    const circulating = xs.porCirculating ?? xs.circulating;
+    if (circulating === null || circulating <= 0) return false;
+    const reserve = (xs.sharesHeld / circulating) * 100;
     return reserve < 100;
   });
   for (const alert of xstocksAlerts) {
-    const reserve = ((alert.sharesHeld! / alert.circulating!) * 100).toFixed(2);
-    console.log(`[ALERT] xStocks under-reserved: ${alert.symbol} reserve=${reserve}%`);
+    const circulating = alert.porCirculating ?? alert.circulating!;
+    const reserve = ((alert.sharesHeld! / circulating) * 100).toFixed(2);
+    console.log(`[ALERT] xStocks under-reserved: ${alert.symbol} reserve=${reserve}% (using ${alert.porCirculating ? 'PoR' : 'on-chain'} circulating=${circulating.toFixed(2)})`);
     const ok = await sendXStocksLarkAlert(larkUrl, alert);
     if (ok) xstocksAlertCount++;
   }

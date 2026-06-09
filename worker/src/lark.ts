@@ -109,8 +109,9 @@ export async function sendXStocksLarkAlert(
   webhookUrl: string,
   result: XStocksResult
 ): Promise<boolean> {
-  const reserve = result.circulating! > 0
-    ? ((result.sharesHeld! / result.circulating!) * 100).toFixed(2)
+  const circulating = result.porCirculating ?? result.circulating!;
+  const reserve = circulating > 0
+    ? ((result.sharesHeld! / circulating) * 100).toFixed(2)
     : "N/A";
 
   const card = {
@@ -130,7 +131,7 @@ export async function sendXStocksLarkAlert(
         tag: "div",
         fields: [
           { is_short: true, text: { tag: "lark_md", content: `**Shares Held**\n${fmt(result.sharesHeld)}` } },
-          { is_short: true, text: { tag: "lark_md", content: `**Circulating (On-chain)**\n${fmt(result.circulating)}` } },
+          { is_short: true, text: { tag: "lark_md", content: `**Circulating (PoR)**\n${fmt(circulating)}` } },
         ],
       },
       {

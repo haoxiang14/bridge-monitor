@@ -26,4 +26,5 @@ jobs:
           LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
           HELIUS_API_KEY: ${{ secrets.HELIUS_API_KEY }}
           TRONGRID_API_KEY: ${{ secrets.TRONGRID_API_KEY }}
+          TONAPI_KEY: ${{ secrets.TONAPI_KEY }}
         run: npm start

@@ -192,11 +192,19 @@ async function solanaBalanceOf(rpc: string, mint: string, wallet: string): Promi
   return BigInt(0);
 }
 
+function tonHeaders(): Record<string, string> {
+  const h: Record<string, string> = {};
+  if (process.env.TONAPI_KEY) {
+    h["Authorization"] = `Bearer ${process.env.TONAPI_KEY}`;
+  }
+  return h;
+}
+
 async function tonTotalSupply(apiBase: string, jetton: string): Promise<bigint | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
-      const res = await fetchWithTimeout(`${apiBase}/jettons/${jetton}`, {});
+      const res = await fetchWithTimeout(`${apiBase}/jettons/${jetton}`, { headers: tonHeaders() });
       if (res.status === 429) continue;
       const json: any = await res.json();
       if (json.total_supply) return BigInt(json.total_supply);
@@ -209,7 +217,7 @@ async function tonBalanceOf(apiBase: string, jetton: string, wallet: string): Pr
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
-      const res = await fetchWithTimeout(`${apiBase}/accounts/${wallet}/jettons/${jetton}`, {});
+      const res = await fetchWithTimeout(`${apiBase}/accounts/${wallet}/jettons/${jetton}`, { headers: tonHeaders() });
       if (res.status === 429) continue;
       const json: any = await res.json();
       if (json.balance) return BigInt(json.balance);
@@ -351,14 +359,13 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
 
   const por = await fetchPoR(token.symbol);
 
-  const evmChains = CHAINS.filter(c => c.type !== "tron");
+  const evmChains = CHAINS.filter(c => c.type === "evm");
+  const solanaChains = CHAINS.filter(c => c.type === "solana");
+  const tonChains = CHAINS.filter(c => c.type === "ton");
   const tronChains = CHAINS.filter(c => c.type === "tron");
 
-  const evmChainsNonSolana = evmChains.filter(c => c.type !== "solana");
-  const solanaChains = evmChains.filter(c => c.type === "solana");
-
   const evmResults = await Promise.all(
-    evmChainsNonSolana.map(async (chain) => {
+    evmChains.map(async (chain) => {
       const tokenAddr = getTokenAddress(token, chain);
       const supply = await getTotalSupply(chain, tokenAddr);
       if (supply === null) return { chain, supply: null, systemHeld: null };
@@ -371,7 +378,6 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     })
   );
 
-  // Solana: sequential wallet queries to avoid rate limiting on public RPCs
   const solanaResults = [];
   for (const chain of solanaChains) {
     const tokenAddr = getTokenAddress(token, chain);
@@ -390,6 +396,29 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
       totalSystemHeld += bal;
     }
     solanaResults.push({ chain, supply, systemHeld: totalSystemHeld });
+  }
+
+  // TON: sequential with 1s delay (API limit: 1 req/sec)
+  const tonResults = [];
+  for (const chain of tonChains) {
+    const tokenAddr = getTokenAddress(token, chain);
+    await new Promise(r => setTimeout(r, 1000));
+    const supply = await getTotalSupply(chain, tokenAddr);
+    if (supply === null) {
+      tonResults.push({ chain, supply: null, systemHeld: null });
+      continue;
+    }
+    const chainWallets = getSystemWallets(chain, wallets);
+    let totalSystemHeld = BigInt(0);
+    for (const wallet of chainWallets) {
+      await new Promise(r => setTimeout(r, 1000));
+      const bal = await getWalletBalance(chain, tokenAddr, wallet);
+      if (bal > BigInt(0)) {
+        console.log(`[XSTOCKS] ${token.symbol} ${chain.chain} wallet ${wallet.slice(0, 8)}... balance=${Number(bal) / (10 ** chain.decimals)}`);
+      }
+      totalSystemHeld += bal;
+    }
+    tonResults.push({ chain, supply, systemHeld: totalSystemHeld });
   }
 
   const tronResults = [];
@@ -412,7 +441,7 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     tronResults.push({ chain, supply, systemHeld: totalSystemHeld });
   }
 
-  for (const result of [...evmResults, ...solanaResults, ...tronResults]) {
+  for (const result of [...evmResults, ...solanaResults, ...tonResults, ...tronResults]) {
     if (result.supply !== null) {
       const decimals = result.chain.decimals;
       const divisor = 10 ** decimals;

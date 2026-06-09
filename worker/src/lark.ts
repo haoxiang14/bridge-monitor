@@ -84,6 +84,13 @@ export async function sendLarkAlert(
         ],
       },
       {
+        tag: "div",
+        text: {
+          tag: "lark_md",
+          content: "**🔍 Response Guide:**\n1. Open dashboard to verify alert details\n2. Check L1 locked balance on Etherscan\n3. Check L2 minted supply on chain explorer\n4. If confirmed, notify team lead immediately\n5. Escalate to bridge team if delta persists > 15 min",
+        },
+      },
+      {
         tag: "note",
         elements: [{ tag: "plain_text", content: result.timestamp }],
       },
@@ -152,6 +159,13 @@ export async function sendXStocksLarkAlert(
             multi_url: { url: "https://bridge-monitor-theta.vercel.app/" },
           },
         ],
+      },
+      {
+        tag: "div",
+        text: {
+          tag: "lark_md",
+          content: "**🔍 Response Guide:**\n1. Open dashboard to verify reserve ratio\n2. Check on-chain circulating supply vs PoR API\n3. Verify if chain RPCs are healthy (TON/Tron failures can inflate circulating)\n4. If reserve genuinely < 100%, notify team lead\n5. Confirm shares held on broker matches PoR API",
+        },
       },
       {
         tag: "note",

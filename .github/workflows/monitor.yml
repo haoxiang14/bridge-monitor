@@ -16,6 +16,12 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Restore supply cache
+        uses: actions/cache@v4
+        with:
+          path: worker/.cache
+          key: supply-state
+
       - name: Install worker dependencies
         working-directory: worker
         run: npm install

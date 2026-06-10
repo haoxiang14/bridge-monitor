@@ -1,5 +1,6 @@
 import { ReconcileResult } from "./rpc.js";
 import { XStocksResult } from "./xstocks.js";
+import { NativeTokenResult } from "./cctp.js";
 
 const L1_EXPLORERS: Record<string, { name: string; url: string }> = {
   "0x95fC37A27a2f68e3A647CDc081F0A89bb47c3012": { name: "Etherscan", url: "https://etherscan.io/address/" },
@@ -185,6 +186,80 @@ export async function sendXStocksLarkAlert(
     return json.code === 0;
   } catch (e) {
     console.error("[LARK] Error sending xStocks alert:", e);
+    return false;
+  }
+}
+
+export async function sendNativeTokenLarkAlert(
+  webhookUrl: string,
+  result: NativeTokenResult,
+  previousSupply: number,
+  changePct: number
+): Promise<boolean> {
+  const card = {
+    header: {
+      template: "red",
+      title: { tag: "plain_text", content: "Native Token Supply Spike Alert" },
+    },
+    elements: [
+      {
+        tag: "div",
+        fields: [
+          { is_short: true, text: { tag: "lark_md", content: `**Token**\n${result.symbol} (${result.name})` } },
+          { is_short: true, text: { tag: "lark_md", content: `**Change**\n+${changePct.toFixed(2)}%` } },
+        ],
+      },
+      {
+        tag: "div",
+        fields: [
+          { is_short: true, text: { tag: "lark_md", content: `**Previous Supply**\n${fmt(previousSupply)}` } },
+          { is_short: true, text: { tag: "lark_md", content: `**Current Supply**\n${fmt(result.totalSupply)}` } },
+        ],
+      },
+      {
+        tag: "div",
+        fields: [
+          { is_short: true, text: { tag: "lark_md", content: `**Chains Queried**\n${result.successCount}/${result.chainCount}` } },
+          { is_short: true, text: { tag: "lark_md", content: `**Increase**\n${fmt(result.totalSupply! - previousSupply)}` } },
+        ],
+      },
+      { tag: "hr" },
+      {
+        tag: "action",
+        actions: [
+          {
+            tag: "button",
+            text: { tag: "plain_text", content: "View Dashboard" },
+            type: "primary",
+            multi_url: { url: "https://bridge-monitor-theta.vercel.app/" },
+          },
+        ],
+      },
+      {
+        tag: "div",
+        text: {
+          tag: "lark_md",
+          content: "**Response Guide:**\n1. Open dashboard to check chain breakdown\n2. Verify if failed chains caused a false reading last run\n3. Compare per-chain supply to identify which chain spiked\n4. If supply increase is real (>10%), notify team lead\n5. Check if new chain deployment or minting event occurred",
+        },
+      },
+      {
+        tag: "note",
+        elements: [{ tag: "plain_text", content: result.timestamp }],
+      },
+    ],
+  };
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ msg_type: "interactive", card }),
+    });
+    const json: any = await res.json();
+    console.log(`[LARK] Native token alert for ${result.symbol}: status=${res.status} code=${json.code} msg=${json.msg ?? json.StatusMessage}`);
+    return json.code === 0;
+  } catch (e) {
+    console.error("[LARK] Error sending native token alert:", e);
     return false;
   }
 }

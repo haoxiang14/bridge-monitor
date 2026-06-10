@@ -35,7 +35,7 @@ export async function sendLarkAlert(
   const card = {
     header: {
       template: "red",
-      title: { tag: "plain_text", content: "⚠️ Bridge Insolvency Alert" },
+      title: { tag: "plain_text", content: "Bridge Insolvency Alert" },
     },
     elements: [
       {
@@ -87,7 +87,7 @@ export async function sendLarkAlert(
         tag: "div",
         text: {
           tag: "lark_md",
-          content: "**🔍 Response Guide:**\n1. Open dashboard to verify alert details\n2. Check L1 locked balance on Etherscan\n3. Check L2 minted supply on chain explorer\n4. If confirmed, notify team lead immediately\n5. Escalate to bridge team if delta persists > 15 min",
+          content: "**Response Guide:**\n1. Open dashboard to verify alert details\n2. Check L1 locked balance on Etherscan\n3. Check L2 minted supply on chain explorer\n4. If confirmed, notify team lead immediately\n5. Escalate to bridge team if delta persists > 15 min",
         },
       },
       {
@@ -124,7 +124,7 @@ export async function sendXStocksLarkAlert(
   const card = {
     header: {
       template: "orange",
-      title: { tag: "plain_text", content: "⚠️ xStocks Under-Reserved Alert" },
+      title: { tag: "plain_text", content: "xStocks Under-Reserved Alert" },
     },
     elements: [
       {
@@ -164,7 +164,7 @@ export async function sendXStocksLarkAlert(
         tag: "div",
         text: {
           tag: "lark_md",
-          content: "**🔍 Response Guide:**\n1. Open dashboard to verify reserve ratio\n2. Check on-chain circulating supply vs PoR API\n3. Verify if chain RPCs are healthy (TON/Tron failures can inflate circulating)\n4. If reserve genuinely < 100%, notify team lead\n5. Confirm shares held on broker matches PoR API",
+          content: "**Response Guide:**\n1. Open dashboard to verify reserve ratio\n2. Check on-chain circulating supply vs PoR API\n3. Verify if chain RPCs are healthy (TON/Tron failures can inflate circulating)\n4. If reserve genuinely < 100%, notify team lead\n5. Confirm shares held on broker matches PoR API",
         },
       },
       {

@@ -95,11 +95,39 @@ interface XStocksResult {
   timestamp: string;
 }
 
+interface OftAdapterResult {
+  symbol: string;
+  name: string;
+  sourceChain: string;
+  adapterAddress: string;
+  tokenAddress: string;
+  locked: number | null;
+  totalMinted: number | null;
+  delta: number | null;
+  deltaPct: number | null;
+  destinations: { chain: string; supply: number | null }[];
+  status: "OK" | "ALERT" | "ERROR";
+  timestamp: string;
+}
+
+interface OftTokenResult {
+  symbol: string;
+  name: string;
+  totalSupply: number | null;
+  chainCount: number;
+  successCount: number;
+  chains: { chain: string; supply: number | null }[];
+  status: "OK" | "ERROR";
+  timestamp: string;
+}
+
 interface ApiResponse {
   timestamp: string;
   results: ReconcileResult[];
   nativeTokens: NativeTokenResult[];
   xstocks: XStocksResult[];
+  oftAdapters: OftAdapterResult[];
+  oftTokens: OftTokenResult[];
 }
 
 const POLL_INTERVAL = 300_000;
@@ -214,6 +242,8 @@ export default function Dashboard() {
   const [selected, setSelected] = useState<ReconcileResult | null>(null);
   const [selectedNative, setSelectedNative] = useState<NativeTokenResult | null>(null);
   const [selectedXStock, setSelectedXStock] = useState<XStocksResult | null>(null);
+  const [selectedOftAdapter, setSelectedOftAdapter] = useState<OftAdapterResult | null>(null);
+  const [selectedOftToken, setSelectedOftToken] = useState<OftTokenResult | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -556,6 +586,142 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* OFT Adapter Section */}
+        {data?.oftAdapters && data.oftAdapters.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              OFT Adapter (Locked vs Minted)
+            </h2>
+            <div className="rounded-xl bg-card border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Symbol</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Source Chain</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Locked</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Total Minted</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Delta</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Delta %</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-center">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.oftAdapters.map((r, i) => (
+                    <TableRow
+                      key={i}
+                      onClick={() => setSelectedOftAdapter(r)}
+                      className={`cursor-pointer transition-colors border-border ${
+                        r.status === "ALERT"
+                          ? "bg-red-500/5 hover:bg-red-500/10"
+                          : "hover:bg-accent/50"
+                      }`}
+                    >
+                      <TableCell>
+                        <span className="font-mono text-sm font-medium text-foreground">{r.symbol}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground capitalize">{r.sourceChain}</span>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {formatNumber(r.locked)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {formatNumber(r.totalMinted)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        <span className={r.delta !== null && r.delta < 0 ? "text-red-400" : "text-emerald-400"}>
+                          {r.delta !== null ? `${r.delta >= 0 ? "+" : ""}${formatNumber(r.delta)}` : "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                        {r.deltaPct !== null ? `${r.deltaPct.toFixed(2)}%` : "—"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {r.status === "OK" && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            OK
+                          </span>
+                        )}
+                        {r.status === "ALERT" && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-red-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                            ALERT
+                          </span>
+                        )}
+                        {r.status === "ERROR" && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+                            ERROR
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
+        {/* OFT Token Section */}
+        {data?.oftTokens && data.oftTokens.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              OFT Tokens (Cross-Chain Supply)
+            </h2>
+            <div className="rounded-xl bg-card border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Symbol</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Name</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Total Supply</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Chains</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-center">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.oftTokens.map((r, i) => (
+                    <TableRow
+                      key={i}
+                      onClick={() => setSelectedOftToken(r)}
+                      className="cursor-pointer transition-colors border-border hover:bg-accent/50"
+                    >
+                      <TableCell>
+                        <span className="font-mono text-sm font-medium text-foreground">{r.symbol}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">{r.name}</span>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {formatNumber(r.totalSupply)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        <span className="text-muted-foreground">{r.successCount}/{r.chainCount}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {r.status === "OK" && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            OK
+                          </span>
+                        )}
+                        {r.status === "ERROR" && (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+                            ERROR
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <footer className="text-xs text-muted-foreground text-center">
           Polling every 5 minutes via public RPCs | Click a row for contract details
@@ -817,6 +983,168 @@ export default function Dashboard() {
               {/* Timestamp */}
               <div className="text-[10px] text-muted-foreground text-right">
                 Last checked: {new Date(selectedNative.timestamp).toLocaleString()}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* OFT Adapter Detail Modal */}
+      <Dialog open={!!selectedOftAdapter} onOpenChange={(open) => !open && setSelectedOftAdapter(null)}>
+        <DialogContent className="bg-card border-border !max-w-4xl !w-[85vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 pr-8">
+              <span className="text-lg">{selectedOftAdapter?.symbol}</span>
+              <span className="text-muted-foreground font-normal">— {selectedOftAdapter?.name}</span>
+              {selectedOftAdapter?.status === "OK" && (
+                <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OK</Badge>
+              )}
+              {selectedOftAdapter?.status === "ALERT" && (
+                <Badge variant="destructive">ALERT</Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedOftAdapter && (
+            <div className="space-y-5 mt-2 max-h-[70vh] overflow-y-auto pr-1">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Source Chain</div>
+                  <div className="text-sm text-foreground capitalize">{selectedOftAdapter.sourceChain}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Locked (Adapter)</div>
+                  <div className="font-mono text-sm text-foreground">{formatFull(selectedOftAdapter.locked)}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Total Minted (OFTs)</div>
+                  <div className="font-mono text-sm text-foreground">{formatFull(selectedOftAdapter.totalMinted)}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Adapter Contract</div>
+                  <div className="font-mono text-xs text-foreground break-all leading-relaxed">{selectedOftAdapter.adapterAddress}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Token Contract</div>
+                  <div className="font-mono text-xs text-foreground break-all leading-relaxed">{selectedOftAdapter.tokenAddress}</div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Destination Chains (Minted)</div>
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-secondary/50 border-b border-border">
+                        <th className="text-left px-3 py-2 text-muted-foreground font-medium">Chain</th>
+                        <th className="text-right px-3 py-2 text-muted-foreground font-medium">Supply</th>
+                        <th className="text-right px-3 py-2 text-muted-foreground font-medium">Share</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOftAdapter.destinations
+                        .filter((d) => d.supply !== null)
+                        .sort((a, b) => (b.supply ?? 0) - (a.supply ?? 0))
+                        .map((d, i) => (
+                          <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                            <td className="px-3 py-1.5 text-foreground capitalize">{d.chain}</td>
+                            <td className="px-3 py-1.5 text-right font-mono">{formatNumber(d.supply)}</td>
+                            <td className="px-3 py-1.5 text-right font-mono text-muted-foreground">
+                              {selectedOftAdapter.totalMinted ? ((d.supply! / selectedOftAdapter.totalMinted) * 100).toFixed(1) + "%" : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      {selectedOftAdapter.destinations
+                        .filter((d) => d.supply === null)
+                        .map((d, i) => (
+                          <tr key={`err-${i}`} className="border-b border-border last:border-0">
+                            <td className="px-3 py-1.5 text-muted-foreground capitalize">{d.chain}</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="text-[10px] text-muted-foreground text-right">
+                Last checked: {new Date(selectedOftAdapter.timestamp).toLocaleString()}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* OFT Token Detail Modal */}
+      <Dialog open={!!selectedOftToken} onOpenChange={(open) => !open && setSelectedOftToken(null)}>
+        <DialogContent className="bg-card border-border !max-w-4xl !w-[85vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 pr-8">
+              <span className="text-lg">{selectedOftToken?.symbol}</span>
+              <span className="text-muted-foreground font-normal">— {selectedOftToken?.name}</span>
+              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                {selectedOftToken?.successCount}/{selectedOftToken?.chainCount} chains
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedOftToken && (
+            <div className="space-y-5 mt-2 max-h-[70vh] overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Total Supply</div>
+                  <div className="font-mono text-sm text-foreground">{formatFull(selectedOftToken.totalSupply)}</div>
+                </div>
+                <div className="rounded-lg bg-secondary/50 border border-border p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Model</div>
+                  <div className="text-sm text-foreground">OFT (Burn & Mint across chains)</div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Per-Chain Supply</div>
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-secondary/50 border-b border-border">
+                        <th className="text-left px-3 py-2 text-muted-foreground font-medium">Chain</th>
+                        <th className="text-right px-3 py-2 text-muted-foreground font-medium">Supply</th>
+                        <th className="text-right px-3 py-2 text-muted-foreground font-medium">Share</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOftToken.chains
+                        .filter((c) => c.supply !== null)
+                        .sort((a, b) => (b.supply ?? 0) - (a.supply ?? 0))
+                        .map((c, i) => (
+                          <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                            <td className="px-3 py-1.5 text-foreground capitalize">{c.chain}</td>
+                            <td className="px-3 py-1.5 text-right font-mono">{formatNumber(c.supply)}</td>
+                            <td className="px-3 py-1.5 text-right font-mono text-muted-foreground">
+                              {selectedOftToken.totalSupply ? ((c.supply! / selectedOftToken.totalSupply) * 100).toFixed(1) + "%" : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      {selectedOftToken.chains
+                        .filter((c) => c.supply === null)
+                        .map((c, i) => (
+                          <tr key={`err-${i}`} className="border-b border-border last:border-0">
+                            <td className="px-3 py-1.5 text-muted-foreground capitalize">{c.chain}</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
+                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="text-[10px] text-muted-foreground text-right">
+                Last checked: {new Date(selectedOftToken.timestamp).toLocaleString()}
               </div>
             </div>
           )}

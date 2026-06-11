@@ -3,7 +3,8 @@ import { BRIDGES } from "./bridges.js";
 import { checkAllBridges } from "./rpc.js";
 import { checkNativeTokens } from "./cctp.js";
 import { checkXStocks } from "./xstocks.js";
-import { sendLarkAlert, sendXStocksLarkAlert, sendNativeTokenLarkAlert } from "./lark.js";
+import { checkOftAdapters, checkOftTokens } from "./oft.js";
+import { sendLarkAlert, sendXStocksLarkAlert, sendNativeTokenLarkAlert, sendOftAdapterLarkAlert } from "./lark.js";
 
 const STATE_FILE = ".cache/last-supply.json";
 const SUPPLY_SPIKE_THRESHOLD = 10; // alert if supply increases > 10%
@@ -38,15 +39,18 @@ async function main() {
 
   console.log(`[WORKER] Starting bridge monitor check at ${new Date().toISOString()}`);
 
-  const [bridgeResults, nativeTokens, xstocks] = await Promise.all([
+  const [bridgeResults, nativeTokens, xstocks, oftAdapters, oftTokens] = await Promise.all([
     checkAllBridges(BRIDGES),
     checkNativeTokens(),
     checkXStocks(),
+    checkOftAdapters(),
+    checkOftTokens(),
   ]);
 
   let bridgeAlertCount = 0;
   let xstocksAlertCount = 0;
   let nativeAlertCount = 0;
+  let oftAlertCount = 0;
 
   // Bridge insolvency alerts
   const bridgeAlerts = bridgeResults.filter((r) => r.status === "ALERT");
@@ -73,15 +77,23 @@ async function main() {
     if (ok) xstocksAlertCount++;
   }
 
-  // Native token supply spike alerts — compare with last run
+  // OFT Adapter insolvency alerts (minted > locked)
+  const oftAdapterAlerts = oftAdapters.filter((r) => r.status === "ALERT");
+  for (const alert of oftAdapterAlerts) {
+    console.log(`[ALERT] OFT adapter insolvency: ${alert.symbol} (${alert.sourceChain}) locked=${alert.locked} minted=${alert.totalMinted}`);
+    const ok = await sendOftAdapterLarkAlert(larkUrl, alert);
+    if (ok) oftAlertCount++;
+  }
+
+  // Native token + OFT token supply spike alerts — compare with last run
   const lastSupply = loadLastSupply();
   const currentSupply: SupplyState = {};
 
   for (const nt of nativeTokens) {
     if (nt.totalSupply === null || nt.status === "ERROR") continue;
-    currentSupply[nt.symbol] = nt.totalSupply;
+    currentSupply[`native:${nt.symbol}`] = nt.totalSupply;
 
-    const prev = lastSupply[nt.symbol];
+    const prev = lastSupply[`native:${nt.symbol}`];
     if (prev && prev > 0) {
       const changePct = ((nt.totalSupply - prev) / prev) * 100;
       console.log(`[NATIVE] ${nt.symbol}: prev=${prev.toFixed(0)} current=${nt.totalSupply.toFixed(0)} change=${changePct.toFixed(2)}%`);
@@ -95,9 +107,23 @@ async function main() {
     }
   }
 
+  for (const ot of oftTokens) {
+    if (ot.totalSupply === null || ot.status === "ERROR") continue;
+    currentSupply[`oft:${ot.symbol}`] = ot.totalSupply;
+
+    const prev = lastSupply[`oft:${ot.symbol}`];
+    if (prev && prev > 0) {
+      const changePct = ((ot.totalSupply - prev) / prev) * 100;
+      if (changePct > SUPPLY_SPIKE_THRESHOLD) {
+        console.log(`[ALERT] OFT supply spike: ${ot.symbol} +${changePct.toFixed(2)}%`);
+        oftAlertCount++;
+      }
+    }
+  }
+
   saveLastSupply(currentSupply);
 
-  console.log(`[WORKER] Done. Bridges: ${bridgeResults.length} checked, ${bridgeAlertCount} alerts. xStocks: ${xstocks.length} checked, ${xstocksAlertCount} alerts. Native: ${nativeTokens.length} checked, ${nativeAlertCount} alerts.`);
+  console.log(`[WORKER] Done. Bridges: ${bridgeResults.length} checked, ${bridgeAlertCount} alerts. xStocks: ${xstocks.length} checked, ${xstocksAlertCount} alerts. Native: ${nativeTokens.length} checked, ${nativeAlertCount} alerts. OFT: ${oftAdapters.length} adapters + ${oftTokens.length} tokens, ${oftAlertCount} alerts.`);
 }
 
 main().catch((e) => {

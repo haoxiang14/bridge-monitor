@@ -208,11 +208,11 @@ const ADAPTERS: AdapterConfig[] = [
   { chain: "ETH", symbol: "WBTC", name: "wBTC", tokenAddress: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", adapterAddress: "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c", decimals: 8, destinations: [
     { chain: "bsc", address: "0x0555e30da8f98308edb960aa94c0db47230d2b9c", decimals: 8 },
     { chain: "avalanche", address: "0x0555e30da8f98308edb960aa94c0db47230d2b9c", decimals: 8 },
+    { chain: "optimism", address: "0xc3f854b2970f8727d28527ece33176fac67fef48", decimals: 8 },
     { chain: "base", address: "0x0555e30da8f98308edb960aa94c0db47230d2b9c", decimals: 8 },
-    { chain: "swell", address: "0x0555e30da8f98308edb960aa94c0db47230d2b9c", decimals: 8 },
     { chain: "sei", address: "0x0555e30da8f98308edb960aa94c0db47230d2b9c", decimals: 8 },
     { chain: "bera", address: "0x0555e30da8f98308edb960aa94c0db47230d2b9c", decimals: 8 },
-    { chain: "unichain", address: "0x0555e30da8f98308edb960aa94c0db47230d2b9c", decimals: 8 },
+    { chain: "hyperliquid", address: "0x0555e30da8f98308edb960aa94c0db47230d2b9c", decimals: 8 },
   ] },
   { chain: "BASE", symbol: "ZORA", name: "ZORA", tokenAddress: "0x1111111111166b7fe7bd91427724b487980afc69", adapterAddress: "0x9D0b5812618357fd7d5997f7f017ae6e8A9dD3C5", decimals: 18, destinations: [] },
   { chain: "ETH", symbol: "FMC", name: "FMC", tokenAddress: "0x6bfdb6f4e65ead27118592a41eb927cea6956198", adapterAddress: "0x2d955a6765ec08121186A8f476183aF41C7aE5f6", decimals: 18, destinations: [
@@ -233,11 +233,10 @@ const ADAPTERS: AdapterConfig[] = [
     { chain: "manta", address: "0x58538e6a46e07434d7e7375bc268d3cb839c0133", decimals: 18 },
     { chain: "optimism", address: "0x58538e6a46e07434d7e7375bc268d3cb839c0133", decimals: 18 },
     { chain: "mantle", address: "0x58538e6a46e07434d7e7375bc268d3cb839c0133", decimals: 18 },
+    { chain: "linea", address: "0x58538e6a46e07434d7e7375bc268d3cb839c0133", decimals: 18 },
     { chain: "zksync", address: "0x686b311f82b407f0be842652a98e5619f64cc25f", decimals: 18 },
-    { chain: "zircuit", address: "0x813635891aa06bd55036bbd8f7d1a34ab3de9a0f", decimals: 18 },
     { chain: "base", address: "0x58538e6a46e07434d7e7375bc268d3cb839c0133", decimals: 18 },
-    { chain: "swell", address: "0x58538e6a46e07434d7e7375bc268d3cb839c0133", decimals: 18 },
-    { chain: "morph", address: "0x58538e6a46e07434d7e7375bc268d3cb839c0133", decimals: 18 },
+    { chain: "hyperliquid", address: "0x58538e6a46e07434d7e7375bc268d3cb839c0133", decimals: 18 },
   ] },
   { chain: "ETH", symbol: "USDS", name: "USDS", tokenAddress: "0xdC035D45d973E3EC169d2276DDab16f1e407384F", adapterAddress: "0x1e1D42781FC170EF9da004Fb735f56F0276d01B8", decimals: 18, destinations: [
     { chain: "avalanche", address: "0x4fec40719fd9a8ae3f8e20531669dec5962d2619", decimals: 18 },
@@ -251,6 +250,7 @@ const ADAPTERS: AdapterConfig[] = [
   ] },
   { chain: "ETH", symbol: "MOG", name: "MOG", tokenAddress: "0xaaee1a9723aadb7afa2810263653a34ba2c21c7a", adapterAddress: "0x377900904c573b02148025E1D8eA660808c8C757", decimals: 18, destinations: [
     { chain: "bsc", address: "0x1d0a4821fdef156b0d051d08a166de5df2788cf7", decimals: 18 },
+    { chain: "solana", address: "26VfKb7jjtdEdvfovoBijScoZmJbWWasFZkgfUD5w7cy", decimals: 4, type: "solana" },
   ] },
   { chain: "ETH", symbol: "KERNEL", name: "KernelDAO", tokenAddress: "0x3f80b1c54ae920be41a77f8b902259d48cf24ccf", adapterAddress: "0x2A1D74de3027ccE18d31011518C571130a4cd513", decimals: 18, destinations: [
     { chain: "bsc", address: "0x9ecaf80c1303cca8791afbc0ad405c8a35e8d9f1", decimals: 18 },

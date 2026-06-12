@@ -111,7 +111,9 @@ const ADAPTERS: AdapterConfig[] = [
     { chain: "linea", address: "0xd96536b77ae5500fe850add2253bcf640e7824c1", decimals: 18 },
   ] },
   { chain: "BASE", symbol: "VIRTUAL", name: "Virtuals Protocol", tokenAddress: "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b", adapterAddress: "0xA5A1AFbfF720f79f1f7833aAfBdcEe87770BbC93", decimals: 18, destinations: [] },
-  { chain: "ETH", symbol: "SWELL", name: "SWELL", tokenAddress: "0x0a6e7ba5042b38349e437ec6db6214aec7b35676", adapterAddress: "0x09341022ea237a4DB1644DE7CCf8FA0e489D85B7", decimals: 18, destinations: [] },
+  { chain: "ETH", symbol: "SWELL", name: "SWELL", tokenAddress: "0x0a6e7ba5042b38349e437ec6db6214aec7b35676", adapterAddress: "0x09341022ea237a4DB1644DE7CCf8FA0e489D85B7", decimals: 18, destinations: [
+    { chain: "swell", address: "0x2826D136F5630adA89C1678b64A61620Aab77Aea", decimals: 18 },
+  ] },
   { chain: "BASE", symbol: "COMMON", name: "COMMON", tokenAddress: "0x4c87da04887a1f9f21f777e3a8dd55c3c9f84701", adapterAddress: "0x6426D675885b2d1D8b3c7c582D0ABD33d3433f64", decimals: 18, destinations: [
     { chain: "bsc", address: "0xa43ca4e5abdf9917eade63c2837eeee321897dad", decimals: 18 },
   ] },
@@ -120,7 +122,10 @@ const ADAPTERS: AdapterConfig[] = [
     { chain: "arbitrum", address: "0xdefa1d21c5f1cbeac00eeb54b44c7d86467cc3a3", decimals: 18 },
     { chain: "base", address: "0xdefa1d21c5f1cbeac00eeb54b44c7d86467cc3a3", decimals: 18 },
   ] },
-  { chain: "ETH", symbol: "LBTC", name: "Lombard", tokenAddress: "0x8236a87084f8b84306f72007f36f2618a5634494", adapterAddress: "0xacB11Bc20B1945e59976e3307d2a805Faa126C31", decimals: 8, destinations: [] },
+  { chain: "ETH", symbol: "LBTC", name: "Lombard", tokenAddress: "0x8236a87084f8b84306f72007f36f2618a5634494", adapterAddress: "0xacB11Bc20B1945e59976e3307d2a805Faa126C31", decimals: 8, destinations: [
+    { chain: "morph", address: "0x2e1871fc8ac793dcf2a74ce004ee21d913763565", decimals: 8 },
+    { chain: "bera", address: "0x630e12d53d4e041b8c5451ad035ea841e08391d7", decimals: 8 },
+  ] },
   { chain: "ETH", symbol: "TRVL", name: "TRVL", tokenAddress: "0xd47bdf574b4f76210ed503e0efe81b58aa061f3d", adapterAddress: "0x74aa9bB52B36a378a6E641B86d7acb76Dc9b3940", decimals: 18, destinations: [
     { chain: "base", address: "0x74aa9bb52b36a378a6e641b86d7acb76dc9b3940", decimals: 18 },
   ] },

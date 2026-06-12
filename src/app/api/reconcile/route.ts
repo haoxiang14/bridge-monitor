@@ -18,7 +18,7 @@ export async function GET() {
   const [results, nativeTokens, xstocks, oftAdapters, oftTokens] = await Promise.all([
     withTimeout(checkAllBridges(BRIDGES), 30000, []),
     withTimeout(checkNativeTokens(), 30000, []),
-    withTimeout(checkXStocks(), 30000, []),
+    withTimeout(checkXStocks(), 55000, []),
     withTimeout(checkOftAdapters(), 30000, []),
     withTimeout(checkOftTokens(), 30000, []),
   ]);

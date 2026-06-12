@@ -39,7 +39,7 @@ interface ChainConfig {
 const CHAINS: ChainConfig[] = [
   { chain: "Ethereum", type: "evm", rpc: "https://ethereum-rpc.publicnode.com", fallbackRpcs: ["https://1rpc.io/eth"], decimals: 18 },
   { chain: "Arbitrum", type: "evm", rpc: "https://arb1.arbitrum.io/rpc", fallbackRpcs: ["https://arbitrum-one-rpc.publicnode.com"], decimals: 18 },
-  { chain: "Mantle", type: "evm", rpc: "https://rpc.mantle.xyz", decimals: 18 },
+  { chain: "Mantle", type: "evm", rpc: "https://rpc.mantle.xyz", fallbackRpcs: ["https://mantle-rpc.publicnode.com"], decimals: 18 },
   { chain: "BSC", type: "evm", rpc: "https://bsc-dataseed.binance.org", fallbackRpcs: ["https://bsc-rpc.publicnode.com"], decimals: 18 },
   { chain: "Ink", type: "evm", rpc: "https://rpc-gel.inkonchain.com", decimals: 18 },
   { chain: "HyperEVM", type: "evm", rpc: "https://rpc.hyperliquid.xyz/evm", decimals: 18 },

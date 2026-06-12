@@ -173,7 +173,7 @@ async function solanaBalanceOf(rpc: string, mint: string, wallet: string): Promi
             jsonrpc: "2.0", id: 1, method: "getTokenAccountsByOwner",
             params: [wallet, { mint }, { encoding: "jsonParsed" }],
           }),
-        }, 15000);
+        }, 20000);
         const json: any = await res.json();
         if (json.error) continue;
         const accounts = json.result?.value ?? [];
@@ -398,17 +398,20 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     })
   );
 
+  // TON: sequential with 1s delay (API limit: 1 req/sec)
   const tonResults = [];
   for (const chain of tonChains) {
     const tokenAddr = getTokenAddress(token, chain);
+    await new Promise(r => setTimeout(r, 1000));
     const supply = await getTotalSupply(chain, tokenAddr);
     if (supply === null) {
-      tonResults.push({ chain, tokenAddr, supply: null, systemHeld: null, walletBalances: [] as {wallet: string; balance: bigint}[] });
+      tonResults.push({ chain, tokenAddr, supply: null, systemHeld: null, walletBalances: [] });
       continue;
     }
     const chainWallets = getSystemWallets(chain, wallets);
     const balances = [];
     for (const wallet of chainWallets) {
+      await new Promise(r => setTimeout(r, 1000));
       const bal = await getWalletBalance(chain, tokenAddr, wallet);
       balances.push({ wallet, balance: bal });
     }
@@ -416,12 +419,13 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     tonResults.push({ chain, tokenAddr, supply, systemHeld: totalSystemHeld, walletBalances: balances });
   }
 
+  // Tron calls sequentially to avoid rate limiting
   const tronResults = [];
   for (const chain of tronChains) {
     const tokenAddr = getTokenAddress(token, chain);
     const supply = await getTotalSupply(chain, tokenAddr);
     if (supply === null) {
-      tronResults.push({ chain, tokenAddr, supply: null, systemHeld: null, walletBalances: [] as {wallet: string; balance: bigint}[] });
+      tronResults.push({ chain, tokenAddr, supply: null, systemHeld: null, walletBalances: [] });
       continue;
     }
     const chainWallets = getSystemWallets(chain, wallets);
@@ -494,5 +498,9 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
 
 export async function checkXStocks(): Promise<XStocksResult[]> {
   const wallets = await fetchSystemWallets();
-  return Promise.all(TOKENS.map(token => checkSingleToken(token, wallets)));
+  const results: XStocksResult[] = [];
+  for (const token of TOKENS) {
+    results.push(await checkSingleToken(token, wallets));
+  }
+  return results;
 }

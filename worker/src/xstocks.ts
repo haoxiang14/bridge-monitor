@@ -36,14 +36,16 @@ interface ChainConfig {
   decimals: number;
 }
 
+const ALCHEMY_KEY = process.env.ALCHEMY_API_KEY || "UVGrLEK3k_XMj9YGYT1BD";
+
 const CHAINS: ChainConfig[] = [
-  { chain: "Ethereum", type: "evm", rpc: "https://ethereum-rpc.publicnode.com", fallbackRpcs: ["https://1rpc.io/eth"], decimals: 18 },
-  { chain: "Arbitrum", type: "evm", rpc: "https://arb1.arbitrum.io/rpc", fallbackRpcs: ["https://arbitrum-one-rpc.publicnode.com"], decimals: 18 },
-  { chain: "Mantle", type: "evm", rpc: "https://rpc.mantle.xyz", fallbackRpcs: ["https://mantle-rpc.publicnode.com"], decimals: 18 },
-  { chain: "BSC", type: "evm", rpc: "https://bsc-dataseed.binance.org", fallbackRpcs: ["https://bsc-rpc.publicnode.com"], decimals: 18 },
-  { chain: "Ink", type: "evm", rpc: "https://rpc-gel.inkonchain.com", decimals: 18 },
-  { chain: "HyperEVM", type: "evm", rpc: "https://rpc.hyperliquid.xyz/evm", decimals: 18 },
-  { chain: "Solana", type: "solana", rpc: process.env.HELIUS_API_KEY ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}` : "https://solana-rpc.publicnode.com", fallbackRpcs: ["https://solana-rpc.publicnode.com", "https://api.mainnet-beta.solana.com"], decimals: 8 },
+  { chain: "Ethereum", type: "evm", rpc: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`, fallbackRpcs: ["https://ethereum-rpc.publicnode.com", "https://1rpc.io/eth"], decimals: 18 },
+  { chain: "Arbitrum", type: "evm", rpc: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`, fallbackRpcs: ["https://arb1.arbitrum.io/rpc", "https://arbitrum-one-rpc.publicnode.com"], decimals: 18 },
+  { chain: "Mantle", type: "evm", rpc: `https://mantle-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`, fallbackRpcs: ["https://rpc.mantle.xyz", "https://mantle-rpc.publicnode.com"], decimals: 18 },
+  { chain: "BSC", type: "evm", rpc: `https://bnb-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`, fallbackRpcs: ["https://bsc-dataseed.binance.org", "https://bsc-rpc.publicnode.com"], decimals: 18 },
+  { chain: "Ink", type: "evm", rpc: `https://ink-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`, fallbackRpcs: ["https://rpc-gel.inkonchain.com"], decimals: 18 },
+  { chain: "HyperEVM", type: "evm", rpc: `https://hyperliquid-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`, fallbackRpcs: ["https://rpc.hyperliquid.xyz/evm"], decimals: 18 },
+  { chain: "Solana", type: "solana", rpc: process.env.HELIUS_API_KEY ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}` : `https://solana-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`, fallbackRpcs: ["https://solana-rpc.publicnode.com", "https://api.mainnet-beta.solana.com"], decimals: 8 },
   { chain: "TON", type: "ton", rpc: "https://tonapi.io/v2", decimals: 8 },
   { chain: "Tron", type: "tron", rpc: "https://api.trongrid.io", decimals: 18 },
 ];

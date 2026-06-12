@@ -172,6 +172,7 @@ const ADAPTERS: AdapterConfig[] = [
   ] },
   { chain: "ETH", symbol: "ZAMA", name: "ZAMA", tokenAddress: "0xa12cc123ba206d4031d1c7f6223d1c2ec249f4f3", adapterAddress: "0xa798B04149e7a61cc95B7D114AD420e8969eA268", decimals: 18, destinations: [
     { chain: "bsc", address: "0x6907a5986c4950bdaf2f81828ec0737ce787519f", decimals: 18 },
+    { chain: "hyperliquid", address: "0x43CDD2CCBEB38EB62FDF54E17AFBABF450EBBB01", decimals: 18 },
     { chain: "solana", address: "4Zp52aF4hZi9fzH19xpbWKYKQvgLyCN67KFbrQDqeTKh", decimals: 9, type: "solana" },
   ] },
   { chain: "ETH", symbol: "YB", name: "YB", tokenAddress: "0x01791f726b4103694969820be083196cc7c045ff", adapterAddress: "0x162d38eF490906bfA6d8E5f6Fc09326a1D588f49", decimals: 18, destinations: [

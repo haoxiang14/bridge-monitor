@@ -105,7 +105,7 @@ interface OftAdapterResult {
   totalMinted: number | null;
   delta: number | null;
   deltaPct: number | null;
-  destinations: { chain: string; supply: number | null }[];
+  destinations: { chain: string; address: string; supply: number | null }[];
   status: "OK" | "ALERT" | "ERROR";
   timestamp: string;
 }
@@ -213,6 +213,12 @@ const CHAIN_EXPLORERS: Record<string, { name: string; url: string }> = {
   // xStocks chains
   "BSC": { name: "BscScan", url: "https://bscscan.com/address/" },
   "Tron": { name: "Tronscan", url: "https://tronscan.org/#/contract/" },
+  // OFT LZ chain names (only those not already covered above)
+  "Bsc": { name: "BscScan", url: "https://bscscan.com/address/" },
+  "Zksync": { name: "zkSync Explorer", url: "https://explorer.zksync.io/address/" },
+  "Bera": { name: "Berascan", url: "https://berascan.com/address/" },
+  "Worldchain": { name: "Worldscan", url: "https://worldscan.org/address/" },
+  "Hyperliquid": { name: "HyperEVM Scan", url: "https://hyperevmscan.io/address/" },
 };
 
 function getExplorer(addr: string): { name: string; url: string } {
@@ -268,6 +274,10 @@ export default function Dashboard() {
 
 
   const errorCount = data?.results.filter((r) => r.status === "ERROR").length ?? 0;
+  const oftAdapterOk = data?.oftAdapters?.filter(r => r.status !== "ERROR").length ?? 0;
+  const oftTokenOk = data?.oftTokens?.filter(r => r.status !== "ERROR").length ?? 0;
+  const bridgeCount = 9 + oftAdapterOk;
+  const tokenCount = 22 + oftAdapterOk + oftTokenOk;
 
   return (
     <main className="min-h-screen p-6 md:p-10">
@@ -310,11 +320,11 @@ export default function Dashboard() {
           </div>
           <div className="rounded-xl bg-card border border-border p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Bridges</div>
-            <div className="text-xl font-bold">9</div>
+            <div className="text-xl font-bold">{bridgeCount}</div>
           </div>
           <div className="rounded-xl bg-card border border-border p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Tokens</div>
-            <div className="text-xl font-bold">22</div>
+            <div className="text-xl font-bold">{tokenCount}</div>
           </div>
         </div>
 
@@ -587,7 +597,7 @@ export default function Dashboard() {
         )}
 
         {/* OFT Adapter Section */}
-        {data?.oftAdapters && data.oftAdapters.length > 0 && (
+        {data?.oftAdapters && data.oftAdapters.filter(r => r.status !== "ERROR").length > 0 && (
           <div className="space-y-3">
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
               OFT Adapter (Locked vs Minted)
@@ -596,17 +606,18 @@ export default function Dashboard() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
-                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Symbol</TableHead>
-                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Source Chain</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Name</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Source</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium">Token</TableHead>
                     <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Locked</TableHead>
-                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Total Minted</TableHead>
+                    <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Minted (OFT)</TableHead>
                     <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Delta</TableHead>
                     <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-right">Delta %</TableHead>
                     <TableHead className="text-muted-foreground text-xs uppercase tracking-wider font-medium text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.oftAdapters.map((r, i) => (
+                  {data.oftAdapters.filter(r => r.status !== "ERROR").map((r, i) => (
                     <TableRow
                       key={i}
                       onClick={() => setSelectedOftAdapter(r)}
@@ -617,10 +628,13 @@ export default function Dashboard() {
                       }`}
                     >
                       <TableCell>
-                        <span className="font-mono text-sm font-medium text-foreground">{r.symbol}</span>
+                        <span className="font-medium text-blue-400">{r.name}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-muted-foreground capitalize">{r.sourceChain}</span>
+                        <span className="text-xs text-muted-foreground capitalize">{r.sourceChain}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm">{r.symbol}</span>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
                         {formatNumber(r.locked)}
@@ -634,7 +648,7 @@ export default function Dashboard() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm text-muted-foreground">
-                        {r.deltaPct !== null ? `${r.deltaPct.toFixed(2)}%` : "—"}
+                        {r.deltaPct !== null ? `${r.deltaPct.toFixed(4)}%` : "—"}
                       </TableCell>
                       <TableCell className="text-center">
                         {r.status === "OK" && (
@@ -649,12 +663,6 @@ export default function Dashboard() {
                             ALERT
                           </span>
                         )}
-                        {r.status === "ERROR" && (
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                            ERROR
-                          </span>
-                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -665,7 +673,7 @@ export default function Dashboard() {
         )}
 
         {/* OFT Token Section */}
-        {data?.oftTokens && data.oftTokens.length > 0 && (
+        {data?.oftTokens && data.oftTokens.filter(r => r.status !== "ERROR").length > 0 && (
           <div className="space-y-3">
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
               OFT Tokens (Cross-Chain Supply)
@@ -682,7 +690,7 @@ export default function Dashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.oftTokens.map((r, i) => (
+                  {data.oftTokens.filter(r => r.status !== "ERROR").map((r, i) => (
                     <TableRow
                       key={i}
                       onClick={() => setSelectedOftToken(r)}
@@ -1007,22 +1015,12 @@ export default function Dashboard() {
 
           {selectedOftAdapter && (
             <div className="space-y-5 mt-2 max-h-[70vh] overflow-y-auto pr-1">
+              {/* Contract Addresses */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-lg bg-secondary/50 border border-border p-3">
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Source Chain</div>
                   <div className="text-sm text-foreground capitalize">{selectedOftAdapter.sourceChain}</div>
                 </div>
-                <div className="rounded-lg bg-secondary/50 border border-border p-3">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Locked (Adapter)</div>
-                  <div className="font-mono text-sm text-foreground">{formatFull(selectedOftAdapter.locked)}</div>
-                </div>
-                <div className="rounded-lg bg-secondary/50 border border-border p-3">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Total Minted (OFTs)</div>
-                  <div className="font-mono text-sm text-foreground">{formatFull(selectedOftAdapter.totalMinted)}</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-secondary/50 border border-border p-3">
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Adapter Contract</div>
                   <div className="font-mono text-xs text-foreground break-all leading-relaxed">{selectedOftAdapter.adapterAddress}</div>
@@ -1033,44 +1031,90 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {/* Supply Reconciliation */}
               <div>
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Destination Chains (Minted)</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Supply Reconciliation</div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Locked (Adapter)</span>
+                    <span className="font-mono text-sm">{formatFull(selectedOftAdapter.locked)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">
+                      Total Minted ({selectedOftAdapter.destinations.filter(d => d.supply !== null).length} chains)
+                    </span>
+                    <span className="font-mono text-sm">{formatFull(selectedOftAdapter.totalMinted)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Delta</span>
+                    <span className={`font-mono text-sm font-medium ${selectedOftAdapter.delta !== null && selectedOftAdapter.delta < 0 ? "text-red-400" : "text-emerald-400"}`}>
+                      {selectedOftAdapter.delta !== null ? `${selectedOftAdapter.delta >= 0 ? "+" : ""}${formatFull(selectedOftAdapter.delta)}` : "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm text-muted-foreground">Delta %</span>
+                    <span className="font-mono text-sm text-muted-foreground">
+                      {selectedOftAdapter.deltaPct !== null ? `${selectedOftAdapter.deltaPct.toFixed(4)}%` : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chain Breakdown */}
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Chain Breakdown</div>
                 <div className="rounded-lg border border-border overflow-hidden">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-secondary/50 border-b border-border">
                         <th className="text-left px-3 py-2 text-muted-foreground font-medium">Chain</th>
+                        <th className="text-left px-3 py-2 text-muted-foreground font-medium">Token Contract</th>
                         <th className="text-right px-3 py-2 text-muted-foreground font-medium">Supply</th>
-                        <th className="text-right px-3 py-2 text-muted-foreground font-medium">Share</th>
                       </tr>
                     </thead>
                     <tbody>
                       {selectedOftAdapter.destinations
                         .filter((d) => d.supply !== null)
                         .sort((a, b) => (b.supply ?? 0) - (a.supply ?? 0))
-                        .map((d, i) => (
-                          <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                            <td className="px-3 py-1.5 text-foreground capitalize">{d.chain}</td>
-                            <td className="px-3 py-1.5 text-right font-mono">{formatNumber(d.supply)}</td>
-                            <td className="px-3 py-1.5 text-right font-mono text-muted-foreground">
-                              {selectedOftAdapter.totalMinted ? ((d.supply! / selectedOftAdapter.totalMinted) * 100).toFixed(1) + "%" : "—"}
-                            </td>
-                          </tr>
-                        ))}
+                        .map((d, i) => {
+                          const chainLabel = d.chain.charAt(0).toUpperCase() + d.chain.slice(1);
+                          const explorer = CHAIN_EXPLORERS[chainLabel] ?? CHAIN_EXPLORERS[d.chain] ?? { name: "Explorer", url: "https://etherscan.io/token/" };
+                          const tokenUrl = explorer.url.replace("/address/", "/token/");
+                          return (
+                            <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                              <td className="px-3 py-1.5 text-foreground">{chainLabel}</td>
+                              <td className="px-3 py-1.5">
+                                <a
+                                  href={tokenUrl + d.address}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-mono text-blue-400 hover:text-blue-300 hover:underline"
+                                >
+                                  {d.address.slice(0, 6)}...{d.address.slice(-4)}
+                                </a>
+                              </td>
+                              <td className="px-3 py-1.5 text-right font-mono">{formatNumber(d.supply)}</td>
+                            </tr>
+                          );
+                        })}
                       {selectedOftAdapter.destinations
                         .filter((d) => d.supply === null)
-                        .map((d, i) => (
-                          <tr key={`err-${i}`} className="border-b border-border last:border-0">
-                            <td className="px-3 py-1.5 text-muted-foreground capitalize">{d.chain}</td>
-                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
-                            <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
-                          </tr>
-                        ))}
+                        .map((d, i) => {
+                          const chainLabel = d.chain.charAt(0).toUpperCase() + d.chain.slice(1);
+                          return (
+                            <tr key={`err-${i}`} className="border-b border-border last:border-0">
+                              <td className="px-3 py-1.5 text-muted-foreground">{chainLabel}</td>
+                              <td className="px-3 py-1.5 font-mono text-muted-foreground">{d.address.slice(0, 6)}...{d.address.slice(-4)}</td>
+                              <td className="px-3 py-1.5 text-right text-muted-foreground">—</td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
               </div>
 
+              {/* Timestamp */}
               <div className="text-[10px] text-muted-foreground text-right">
                 Last checked: {new Date(selectedOftAdapter.timestamp).toLocaleString()}
               </div>

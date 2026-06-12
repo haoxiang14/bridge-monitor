@@ -398,11 +398,10 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     solanaResults.push({ chain, supply, systemHeld: totalSystemHeld });
   }
 
-  // TON: sequential with 1s delay (API limit: 1 req/sec)
+  // TON: sequential (rate limit only applies without API key)
   const tonResults = [];
   for (const chain of tonChains) {
     const tokenAddr = getTokenAddress(token, chain);
-    await new Promise(r => setTimeout(r, 1000));
     const supply = await getTotalSupply(chain, tokenAddr);
     if (supply === null) {
       tonResults.push({ chain, supply: null, systemHeld: null });
@@ -411,7 +410,6 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     const chainWallets = getSystemWallets(chain, wallets);
     let totalSystemHeld = BigInt(0);
     for (const wallet of chainWallets) {
-      await new Promise(r => setTimeout(r, 1000));
       const bal = await getWalletBalance(chain, tokenAddr, wallet);
       if (bal > BigInt(0)) {
         console.log(`[XSTOCKS] ${token.symbol} ${chain.chain} wallet ${wallet.slice(0, 8)}... balance=${Number(bal) / (10 ** chain.decimals)}`);

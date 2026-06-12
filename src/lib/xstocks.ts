@@ -398,11 +398,10 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     })
   );
 
-  // TON: sequential with 1s delay (API limit: 1 req/sec)
+  // TON: sequential (rate limit only applies without API key)
   const tonResults = [];
   for (const chain of tonChains) {
     const tokenAddr = getTokenAddress(token, chain);
-    await new Promise(r => setTimeout(r, 1000));
     const supply = await getTotalSupply(chain, tokenAddr);
     if (supply === null) {
       tonResults.push({ chain, tokenAddr, supply: null, systemHeld: null, walletBalances: [] });
@@ -411,7 +410,6 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     const chainWallets = getSystemWallets(chain, wallets);
     const balances = [];
     for (const wallet of chainWallets) {
-      await new Promise(r => setTimeout(r, 1000));
       const bal = await getWalletBalance(chain, tokenAddr, wallet);
       balances.push({ wallet, balance: bal });
     }

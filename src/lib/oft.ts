@@ -61,6 +61,7 @@ interface Destination {
   chain: string;
   address: string;
   decimals: number;
+  type?: "evm" | "solana";
 }
 
 interface AdapterConfig {
@@ -70,6 +71,7 @@ interface AdapterConfig {
   tokenAddress: string;
   adapterAddress: string;
   decimals: number;
+  sourceType?: "solana";
   destinations: Destination[];
 }
 
@@ -85,9 +87,12 @@ const ADAPTERS: AdapterConfig[] = [
   ] },
   { chain: "ETH", symbol: "ACU", name: "ACU", tokenAddress: "0x216b3643ff8b7bb30d8a48e9f1bd550126202add", adapterAddress: "0x4aD11F4D6b4626E426fBE88e8F1c78F469cA33bE", decimals: 18, destinations: [
     { chain: "base", address: "0xc5fed7c8ccc75d8a72b601a66dffd7a489073f0b", decimals: 18 },
+    { chain: "bsc", address: "0x6ef2ffb38d64afe18ce782da280b300e358cfeaf", decimals: 18 },
   ] },
   { chain: "ETH", symbol: "SIGN", name: "Sign", tokenAddress: "0x868fced65edbf0056c4163515dd840e9f287a4c3", adapterAddress: "0x3a0E6B220897d3Bf7E015c1973510e0F4BB576A9", decimals: 18, destinations: [
     { chain: "base", address: "0x868fced65edbf0056c4163515dd840e9f287a4c3", decimals: 18 },
+    { chain: "bsc", address: "0x868fced65edbf0056c4163515dd840e9f287a4c3", decimals: 18 },
+    { chain: "hyperliquid", address: "0xcf182b861e6ee812c215d1b9dce01b131110bf93", decimals: 18 },
   ] },
   { chain: "ETH", symbol: "DAM", name: "Reservoir", tokenAddress: "0x0fedba9178b70e8b54e2af08ebffcf28a1e5a43b", adapterAddress: "0x40a341B76A766C56F54985285987Dfe52fEA237a", decimals: 18, destinations: [
     { chain: "bsc", address: "0xf9ca3fe094212ffa705742d3626a8ab96aababf8", decimals: 18 },
@@ -99,7 +104,7 @@ const ADAPTERS: AdapterConfig[] = [
   { chain: "ETH", symbol: "OPEN", name: "OPEN", tokenAddress: "0xa227cc36938f0c9e09ce0e64dfab226cad739447", adapterAddress: "0xb548A9D3E8A3fbd821BD52fB915d752BDc8Cf679", decimals: 18, destinations: [
     { chain: "bsc", address: "0xa227cc36938f0c9e09ce0e64dfab226cad739447", decimals: 18 },
   ] },
-  { chain: "ETH", symbol: "AVA", name: "AVA", tokenAddress: "0xa6c0c097741d55ecd9a3a7def3a8253fd022ceb9", adapterAddress: "0xd9483EA7214FCfd89B4Fb8f513B544920E315A52", decimals: 18, destinations: [
+  { chain: "SOL", symbol: "AVA", name: "AVA", tokenAddress: "DKu9kykSfbN5LBfFXtNNDPaX35o4Fv6vJ9FKk7pZpump", adapterAddress: "JAVgARheZkMmEK9zLYrx6edVH1bF6EXJTTxvd6WTubJj", decimals: 6, sourceType: "solana", destinations: [
     { chain: "base", address: "0x80ca9edce4583b8043351a1046f18244b24ef869", decimals: 18 },
   ] },
   { chain: "BASE", symbol: "C", name: "Chainbase", tokenAddress: "0xba12bc7b210e61e5d3110b997a63ea216e0e18f7", adapterAddress: "0x3AdE69D08aC3C7c0Cc3654eeEDbE899f109f7181", decimals: 18, destinations: [
@@ -110,17 +115,21 @@ const ADAPTERS: AdapterConfig[] = [
     { chain: "base", address: "0x34be5b8c30ee4fde069dc878989686abe9884470", decimals: 18 },
     { chain: "linea", address: "0xd96536b77ae5500fe850add2253bcf640e7824c1", decimals: 18 },
   ] },
-  { chain: "BASE", symbol: "VIRTUAL", name: "Virtuals Protocol", tokenAddress: "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b", adapterAddress: "0xA5A1AFbfF720f79f1f7833aAfBdcEe87770BbC93", decimals: 18, destinations: [] },
+  { chain: "BASE", symbol: "VIRTUAL", name: "Virtuals Protocol", tokenAddress: "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b", adapterAddress: "0xA5A1AFbfF720f79f1f7833aAfBdcEe87770BbC93", decimals: 18, destinations: [
+    { chain: "solana", address: "3iQL8BFS2vE7mww4ehAqQHAsbmRNCrPxizWAT2Zfyr9y", decimals: 9, type: "solana" },
+  ] },
   { chain: "ETH", symbol: "SWELL", name: "SWELL", tokenAddress: "0x0a6e7ba5042b38349e437ec6db6214aec7b35676", adapterAddress: "0x09341022ea237a4DB1644DE7CCf8FA0e489D85B7", decimals: 18, destinations: [
     { chain: "swell", address: "0x2826D136F5630adA89C1678b64A61620Aab77Aea", decimals: 18 },
   ] },
   { chain: "BASE", symbol: "COMMON", name: "COMMON", tokenAddress: "0x4c87da04887a1f9f21f777e3a8dd55c3c9f84701", adapterAddress: "0x6426D675885b2d1D8b3c7c582D0ABD33d3433f64", decimals: 18, destinations: [
     { chain: "bsc", address: "0xa43ca4e5abdf9917eade63c2837eeee321897dad", decimals: 18 },
+    { chain: "solana", address: "H1MHqq1dsExxeuYTd8JZzM51z33RvxjuM5sx2oB11WJ", decimals: 9, type: "solana" },
   ] },
   { chain: "ETH", symbol: "ALMANAK", name: "ALMANAK", tokenAddress: "0xdefa1d21c5f1cbeac00eeb54b44c7d86467cc3a3", adapterAddress: "0xCD291a8B325E6aDb423a5F72E1Bc67de9d19256E", decimals: 18, destinations: [
     { chain: "bsc", address: "0xdefa1d21c5f1cbeac00eeb54b44c7d86467cc3a3", decimals: 18 },
     { chain: "arbitrum", address: "0xdefa1d21c5f1cbeac00eeb54b44c7d86467cc3a3", decimals: 18 },
     { chain: "base", address: "0xdefa1d21c5f1cbeac00eeb54b44c7d86467cc3a3", decimals: 18 },
+    { chain: "mantle", address: "0xdefa1d21c5f1cbeac00eeb54b44c7d86467cc3a3", decimals: 18 },
   ] },
   { chain: "ETH", symbol: "LBTC", name: "Lombard", tokenAddress: "0x8236a87084f8b84306f72007f36f2618a5634494", adapterAddress: "0xacB11Bc20B1945e59976e3307d2a805Faa126C31", decimals: 8, destinations: [
     { chain: "morph", address: "0x2e1871fc8ac793dcf2a74ce004ee21d913763565", decimals: 8 },
@@ -158,9 +167,12 @@ const ADAPTERS: AdapterConfig[] = [
   { chain: "ETH", symbol: "TRIA", name: "TRIA", tokenAddress: "0x228bec415ade4b61d7caf0adf8c91eac587ba369", adapterAddress: "0xF1df8aA0B7955B23b10d80193A412AC5650D4791", decimals: 18, destinations: [
     { chain: "bsc", address: "0xb0b92de23baa85fb06208277e925ced53edab482", decimals: 18 },
   ] },
-  { chain: "BASE", symbol: "SCOR", name: "SCOR", tokenAddress: "0xd67ec255100ef200a439d09ff865fbaa2ad9c730", adapterAddress: "0xa58D58839a547cb21FB59cb5dA8c926dfb1E6842", decimals: 18, destinations: [] },
+  { chain: "BASE", symbol: "SCOR", name: "SCOR", tokenAddress: "0xd67ec255100ef200a439d09ff865fbaa2ad9c730", adapterAddress: "0xa58D58839a547cb21FB59cb5dA8c926dfb1E6842", decimals: 18, destinations: [
+    { chain: "mantle", address: "0x8ddb986b11c039a6cc1dbcabd62bae911b348f33", decimals: 18 },
+  ] },
   { chain: "ETH", symbol: "ZAMA", name: "ZAMA", tokenAddress: "0xa12cc123ba206d4031d1c7f6223d1c2ec249f4f3", adapterAddress: "0xa798B04149e7a61cc95B7D114AD420e8969eA268", decimals: 18, destinations: [
     { chain: "bsc", address: "0x6907a5986c4950bdaf2f81828ec0737ce787519f", decimals: 18 },
+    { chain: "solana", address: "4Zp52aF4hZi9fzH19xpbWKYKQvgLyCN67KFbrQDqeTKh", decimals: 9, type: "solana" },
   ] },
   { chain: "ETH", symbol: "YB", name: "YB", tokenAddress: "0x01791f726b4103694969820be083196cc7c045ff", adapterAddress: "0x162d38eF490906bfA6d8E5f6Fc09326a1D588f49", decimals: 18, destinations: [
     { chain: "bsc", address: "0xfb93ee8152dd0a0e6f4b49c66c06d800cf1db72d", decimals: 18 },
@@ -344,6 +356,59 @@ const OFT_TOKENS: OftTokenConfig[] = [
   ] },
 ];
 
+function getSolanaRpcs(): string[] {
+  return [
+    process.env.HELIUS_API_KEY ? `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}` : null,
+    "https://solana-rpc.publicnode.com",
+  ].filter(Boolean) as string[];
+}
+
+async function getSolanaTokenSupply(mint: string): Promise<{ supply: bigint; decimals: number } | null> {
+  for (const rpc of getSolanaRpcs()) {
+    try {
+      const res = await fetchWithTimeout(rpc, {
+        method: "POST",
+        headers: FETCH_HEADERS,
+        body: JSON.stringify({ jsonrpc: "2.0", method: "getTokenSupply", params: [mint], id: 1 }),
+      });
+      const json: any = await res.json();
+      if (json.result?.value) {
+        return { supply: BigInt(json.result.value.amount), decimals: json.result.value.decimals };
+      }
+    } catch {}
+  }
+  return null;
+}
+
+async function getSolanaTokenBalance(owner: string, mint: string): Promise<{ balance: bigint; decimals: number } | null> {
+  for (const rpc of getSolanaRpcs()) {
+    try {
+      const res = await fetchWithTimeout(rpc, {
+        method: "POST",
+        headers: FETCH_HEADERS,
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "getTokenAccountsByOwner",
+          params: [owner, { mint }, { encoding: "jsonParsed" }],
+          id: 1,
+        }),
+      }, 8000);
+      const json: any = await res.json();
+      if (json.result?.value?.length > 0) {
+        let total = BigInt(0);
+        let decimals = 0;
+        for (const acct of json.result.value) {
+          const info = acct.account.data.parsed.info;
+          total += BigInt(info.tokenAmount.amount);
+          decimals = info.tokenAmount.decimals;
+        }
+        return { balance: total, decimals };
+      }
+    } catch {}
+  }
+  return null;
+}
+
 async function evmCall(rpc: string, to: string, data: string): Promise<bigint | null> {
   try {
     const res = await fetchWithTimeout(rpc, {
@@ -405,14 +470,20 @@ export interface OftTokenResult {
 async function checkOneAdapter(cfg: AdapterConfig): Promise<OftAdapterResult | null> {
   if (cfg.destinations.length === 0) return null;
 
-  const rpcKey = CSV_CHAIN_MAP[cfg.chain];
-  if (!rpcKey) return null;
-  const sourceRpcs = getRpcs(rpcKey);
-  if (!sourceRpcs) return null;
+  let locked: number | null = null;
 
-  const divisor = 10 ** cfg.decimals;
-  const lockedRaw = await getBalanceOf(sourceRpcs, cfg.tokenAddress, cfg.adapterAddress);
-  const locked = lockedRaw !== null ? Number(lockedRaw) / divisor : null;
+  if (cfg.sourceType === "solana") {
+    const result = await getSolanaTokenBalance(cfg.adapterAddress, cfg.tokenAddress);
+    locked = result !== null ? Number(result.balance) / (10 ** result.decimals) : null;
+  } else {
+    const rpcKey = CSV_CHAIN_MAP[cfg.chain];
+    if (!rpcKey) return null;
+    const sourceRpcs = getRpcs(rpcKey);
+    if (!sourceRpcs) return null;
+    const divisor = 10 ** cfg.decimals;
+    const lockedRaw = await getBalanceOf(sourceRpcs, cfg.tokenAddress, cfg.adapterAddress);
+    locked = lockedRaw !== null ? Number(lockedRaw) / divisor : null;
+  }
 
   if (locked === null || locked === 0) return null;
 
@@ -422,6 +493,11 @@ async function checkOneAdapter(cfg: AdapterConfig): Promise<OftAdapterResult | n
 
   if (cfg.destinations.length > 0) {
     const destResults = await Promise.all(cfg.destinations.map(async (dest) => {
+      if (dest.type === "solana") {
+        const result = await getSolanaTokenSupply(dest.address);
+        const supply = result !== null ? Number(result.supply) / (10 ** result.decimals) : null;
+        return { chain: dest.chain, address: dest.address, supply };
+      }
       const destRpcKey = LZ_CHAIN_MAP[dest.chain];
       if (!destRpcKey) return { chain: dest.chain, address: dest.address, supply: null };
       const destRpcs = getRpcs(destRpcKey);

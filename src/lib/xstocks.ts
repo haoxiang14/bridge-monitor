@@ -161,30 +161,27 @@ async function solanaTotalSupply(rpc: string, mint: string): Promise<bigint | nu
 }
 
 async function solanaBalanceOf(rpc: string, mint: string, wallet: string): Promise<bigint | null> {
-  const rpcs = [rpc, "https://solana-rpc.publicnode.com", "https://api.mainnet-beta.solana.com"];
+  const rpcs = [rpc, "https://solana-rpc.publicnode.com"];
   for (const rpcUrl of rpcs) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
-        const res = await fetchWithTimeout(rpcUrl, {
-          method: "POST",
-          headers: FETCH_HEADERS,
-          body: JSON.stringify({
-            jsonrpc: "2.0", id: 1, method: "getTokenAccountsByOwner",
-            params: [wallet, { mint }, { encoding: "jsonParsed" }],
-          }),
-        }, 20000);
-        const json: any = await res.json();
-        if (json.error) continue;
-        const accounts = json.result?.value ?? [];
-        let total = BigInt(0);
-        for (const acc of accounts) {
-          const amount = acc.account?.data?.parsed?.info?.tokenAmount?.amount;
-          if (amount) total += BigInt(amount);
-        }
-        return total;
-      } catch {}
-    }
+    try {
+      const res = await fetchWithTimeout(rpcUrl, {
+        method: "POST",
+        headers: FETCH_HEADERS,
+        body: JSON.stringify({
+          jsonrpc: "2.0", id: 1, method: "getTokenAccountsByOwner",
+          params: [wallet, { mint }, { encoding: "jsonParsed" }],
+        }),
+      }, 10000);
+      const json: any = await res.json();
+      if (json.error) continue;
+      const accounts = json.result?.value ?? [];
+      let total = BigInt(0);
+      for (const acc of accounts) {
+        const amount = acc.account?.data?.parsed?.info?.tokenAmount?.amount;
+        if (amount) total += BigInt(amount);
+      }
+      return total;
+    } catch {}
   }
   return BigInt(0);
 }
@@ -376,8 +373,6 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
 
   const evmChains = CHAINS.filter(c => c.type === "evm");
   const solanaChains = CHAINS.filter(c => c.type === "solana");
-  const tonChains = CHAINS.filter(c => c.type === "ton");
-  const tronChains = CHAINS.filter(c => c.type === "tron");
 
   const evmResults = await Promise.all(
     [...evmChains, ...solanaChains].map(async (chain) => {
@@ -398,47 +393,8 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
     })
   );
 
-  // TON: sequential with 1s delay (API limit: 1 req/sec)
-  const tonResults = [];
-  for (const chain of tonChains) {
-    const tokenAddr = getTokenAddress(token, chain);
-    await new Promise(r => setTimeout(r, 1000));
-    const supply = await getTotalSupply(chain, tokenAddr);
-    if (supply === null) {
-      tonResults.push({ chain, tokenAddr, supply: null, systemHeld: null, walletBalances: [] });
-      continue;
-    }
-    const chainWallets = getSystemWallets(chain, wallets);
-    const balances = [];
-    for (const wallet of chainWallets) {
-      await new Promise(r => setTimeout(r, 1000));
-      const bal = await getWalletBalance(chain, tokenAddr, wallet);
-      balances.push({ wallet, balance: bal });
-    }
-    const totalSystemHeld = balances.reduce((sum, b) => sum + b.balance, BigInt(0));
-    tonResults.push({ chain, tokenAddr, supply, systemHeld: totalSystemHeld, walletBalances: balances });
-  }
-
-  // Tron calls sequentially to avoid rate limiting
-  const tronResults = [];
-  for (const chain of tronChains) {
-    const tokenAddr = getTokenAddress(token, chain);
-    const supply = await getTotalSupply(chain, tokenAddr);
-    if (supply === null) {
-      tronResults.push({ chain, tokenAddr, supply: null, systemHeld: null, walletBalances: [] });
-      continue;
-    }
-    const chainWallets = getSystemWallets(chain, wallets);
-    const balances = [];
-    for (const wallet of chainWallets) {
-      const bal = await getWalletBalance(chain, tokenAddr, wallet);
-      balances.push({ wallet, balance: bal });
-    }
-    const totalSystemHeld = balances.reduce((sum, b) => sum + b.balance, BigInt(0));
-    tronResults.push({ chain, tokenAddr, supply, systemHeld: totalSystemHeld, walletBalances: balances });
-  }
-
-  const chainResults = [...evmResults, ...tonResults, ...tronResults];
+  // Skip TON/Tron on frontend — too slow due to rate limiting. Worker handles full monitoring.
+  const chainResults = [...evmResults];
 
   for (const result of chainResults) {
     const decimals = result.chain.decimals;
@@ -498,9 +454,5 @@ async function checkSingleToken(token: XStocksToken, wallets: SystemWalletsCache
 
 export async function checkXStocks(): Promise<XStocksResult[]> {
   const wallets = await fetchSystemWallets();
-  const results: XStocksResult[] = [];
-  for (const token of TOKENS) {
-    results.push(await checkSingleToken(token, wallets));
-  }
-  return results;
+  return Promise.all(TOKENS.map(token => checkSingleToken(token, wallets)));
 }
